@@ -8,6 +8,7 @@
         "rtp-profile.h": "c",
         "rtp-packet.h": "c",
         "rtp-payload-helper.h": "c",
-        "rtp-payload-internal.h": "c"
+        "rtp-payload-internal.h": "c",
+        "thread": "cpp"
     }
 }
