@@ -1,5 +1,5 @@
 if [ -d build ]; then 
-    rm  -rf build
+    rm -rf build
 fi
 
 if [ -e struct_file ]; then

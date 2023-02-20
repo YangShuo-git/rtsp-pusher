@@ -1,0 +1,14 @@
+prefix=/home/yangshuo/ffmpeg_demo/ffmpeg_build
+exec_prefix=${prefix}
+libdir=/home/yangshuo/ffmpeg_demo/ffmpeg_build/lib
+includedir=/home/yangshuo/ffmpeg_demo/ffmpeg_build/include
+
+Name: libswscale
+Description: FFmpeg image rescaling library
+Version: 5.5.100
+Requires: 
+Requires.private: libavutil >= 56.31.100
+Conflicts:
+Libs: -L${libdir}  -lswscale 
+Libs.private: -lm
+Cflags: -I${includedir}

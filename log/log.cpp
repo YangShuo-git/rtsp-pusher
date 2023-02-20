@@ -15,9 +15,10 @@
 #include <sys/stat.h>
 #include <execinfo.h>
 #include <sys/time.h> //  解决gettimeofday报错：未定义标识符
-
 #endif
 
+#include <unistd.h>
+#include <sys/time.h> //  解决gettimeofday报错：未定义标识符
 #include "log.h"
 
 
@@ -43,6 +44,9 @@
 #define PROC_HANDLE void *
 #define SLOG_MUTEX pthread_mutex_t
 #endif
+
+#define PROC_HANDLE void *
+#define SLOG_MUTEX pthread_mutex_t
 
 typedef struct _logger_cfg {
     PROC_HANDLE curr_proc;

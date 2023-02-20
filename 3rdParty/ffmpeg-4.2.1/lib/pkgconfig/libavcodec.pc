@@ -1,0 +1,14 @@
+prefix=/home/yangshuo/ffmpeg_demo/ffmpeg_build
+exec_prefix=${prefix}
+libdir=/home/yangshuo/ffmpeg_demo/ffmpeg_build/lib
+includedir=/home/yangshuo/ffmpeg_demo/ffmpeg_build/include
+
+Name: libavcodec
+Description: FFmpeg codec library
+Version: 58.54.100
+Requires: 
+Requires.private: libswresample >= 3.5.100, libavutil >= 56.31.100
+Conflicts:
+Libs: -L${libdir}  -lavcodec 
+Libs.private: -lvpx -lm -lvpx -lm -lvpx -lm -lvpx -lm -pthread -lm -lz -lfdk-aac -lmp3lame -lm -lopus -lx264 -lx265 -lva
+Cflags: -I${includedir}

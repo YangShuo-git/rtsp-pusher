@@ -1,0 +1,14 @@
+prefix=/home/yangshuo/ffmpeg_demo/ffmpeg_build
+exec_prefix=${prefix}
+libdir=/home/yangshuo/ffmpeg_demo/ffmpeg_build/lib
+includedir=/home/yangshuo/ffmpeg_demo/ffmpeg_build/include
+
+Name: libpostproc
+Description: FFmpeg postprocessing library
+Version: 55.5.100
+Requires: 
+Requires.private: libavutil >= 56.31.100
+Conflicts:
+Libs: -L${libdir}  -lpostproc 
+Libs.private: -lm
+Cflags: -I${includedir}
