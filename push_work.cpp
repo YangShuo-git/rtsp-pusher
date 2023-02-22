@@ -2,8 +2,6 @@
 #include "log.h"
 #include "push_work.h"
 
-
-
 PushWork::PushWork()
 {
 
@@ -19,6 +17,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     mic_sample_rate_ = properties.GetProperty("mic_sample_rate", 48000);
     mic_sample_fmt_ = properties.GetProperty("mic_sample_fmt", AV_SAMPLE_FMT_S16);
     mic_channels_ = properties.GetProperty("mic_channels", 2);
+    // mic_nb_samples_ = properties.GetProperty("mic_nb_samples_", 1024);
 
     // 设置音频捕获
     audio_capturer_ = new AudioCapturer();
@@ -48,7 +47,7 @@ RET_CODE PushWork::DeInit()
     if(audio_capturer_) {
         audio_capturer_->Stop();
         delete audio_capturer_;
-        audio_capturer_ = NULL;
+        audio_capturer_ = nullptr;
     }
 }
 void PushWork::PcmCallback(uint8_t *pcm, int32_t size)

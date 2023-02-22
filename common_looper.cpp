@@ -31,7 +31,7 @@ RET_CODE CommonLooper::Start()
         LogError("Fail to new std::thread");
         return RET_FAIL;
     }
-    
+    return RET_OK;
 }
 
 void CommonLooper::Stop()

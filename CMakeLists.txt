@@ -53,5 +53,4 @@ add_executable(${PROJECT_NAME} ${DIR_SRCS})
 
 # 给可执行程序添加链接库
 target_link_libraries(${PROJECT_NAME} log)
-
 target_link_libraries(${PROJECT_NAME} pthread avfilter avformat avcodec avutil swresample swscale)
