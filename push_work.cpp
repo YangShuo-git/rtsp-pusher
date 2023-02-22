@@ -25,7 +25,9 @@ RET_CODE PushWork::Init(const Properties &properties)
     aud_cap_properties.SetProperty("audio_test", 1);
     aud_cap_properties.SetProperty("input_pcm_name", input_pcm_name_);
     aud_cap_properties.SetProperty("channels", mic_channels_);
-    //    aud_cap_properties.SetProperty("nb_samples", 1024);     // 由编码器提供
+    aud_cap_properties.GetProperty("format", AV_SAMPLE_FMT_S16);
+    aud_cap_properties.SetProperty("nb_samples", 1024);     // 由编码器提供
+    aud_cap_properties.GetProperty("byte_per_sample", 2);    
     if(audio_capturer_->Init(aud_cap_properties) != RET_OK)
     {
         LogError("AudioCapturer Init failed");

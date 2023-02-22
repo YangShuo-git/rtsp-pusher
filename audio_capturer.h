@@ -38,9 +38,10 @@ private:
     int32_t pcm_buf_size_;
     bool is_first_time_ = false;
     int sample_rate_ = 48000;
-    int nb_samples_ = 1024;
     int format_ = 1;        // 目前固定s16先
     int channels_ = 2;
+    int nb_samples_ = 1024;
+    int byte_per_sample_ = 2;
 };
 
 #endif // _AUDIO_CAPTURER_H_
