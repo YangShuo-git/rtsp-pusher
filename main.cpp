@@ -19,7 +19,7 @@ int main()
         Properties properties;
 
         // 音频test模式
-        properties.SetProperty("audio_test", 1);    // 音频测试模式
+        properties.SetProperty("audio_test", 1);
         properties.SetProperty("input_pcm_name", "./res/buweishui_48000_2_s16le.pcm");
         // 麦克风采样属性
         properties.SetProperty("mic_sample_fmt", AV_SAMPLE_FMT_S16);
