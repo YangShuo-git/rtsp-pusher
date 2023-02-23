@@ -26,6 +26,19 @@ int main()
         properties.SetProperty("mic_sample_rate", 48000);
         properties.SetProperty("mic_channels", 2);
 
+        //视频test模式
+        properties.SetProperty("video_test", 1);
+        properties.SetProperty("input_yuv_name", "./res/720x480_25fps_420p.yuv");
+        // 桌面录制属性
+        properties.SetProperty("desktop_x", 0);
+        properties.SetProperty("desktop_y", 0);
+        properties.SetProperty("desktop_width", 720);   //测试模式时和yuv文件的宽度一致
+        properties.SetProperty("desktop_height", 480);  //测试模式时和yuv文件的高度一致
+        //    properties.SetProperty("desktop_pixel_format", AV_PIX_FMT_YUV420P);
+        properties.SetProperty("desktop_fps", 25);//测试模式时和yuv文件的帧率一致
+        // 视频编码属性
+        properties.SetProperty("video_bitrate", 512*1024);  // 设置码率
+
         if(push_work.Init(properties) != RET_OK) {
             LogError("PushWork init failed");
             return -1;

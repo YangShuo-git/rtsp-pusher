@@ -100,5 +100,5 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
 
 void PushWork::YuvCallback(uint8_t *yuv, int32_t size)
 {
-    LogInfo("YuvCallback size:%d", size);
+    LogInfo("size:%d", size);
 }
