@@ -17,7 +17,7 @@ public:
 
     virtual void Loop();
     void AddCallback(function<void(uint8_t*, int32_t)> callback);
-    // void AddCallback(std::function<void(uint8_t *, int32_t)> callback);
+
 private:
 
     // PCM file只是用来测试, 写死为采样率48Khz 2通道 s16格式
@@ -40,8 +40,8 @@ private:
     int sample_rate_ = 48000;
     int format_ = 1;        // 目前固定s16先
     int channels_ = 2;
-    int nb_samples_ = 1024;
-    int byte_per_sample_ = 2;
+    int nb_samples_ = 1024;  // 一个音频帧的采样点
+    int byte_per_sample_ = 2;  // 一个采样点的大小，单位字节
 };
 
 #endif // _AUDIO_CAPTURER_H_

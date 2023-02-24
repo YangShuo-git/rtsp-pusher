@@ -152,7 +152,6 @@ public:
         const_iterator it = find(std::string(key));
         //If not found
         if (it==end())
-            //return default
             return defaultValue;
         //Return value
         return it->second.c_str();
@@ -164,7 +163,6 @@ public:
         const_iterator it = find(key);
         //If not found
         if (it==end())
-            //return default
             return defaultValue;
         //Return value
         return it->second.c_str();
@@ -184,7 +182,7 @@ public:
             //return default
             return defaultValue;
         //Return value
-        return atoi(it->second.c_str());
+        return atoi(it->second.c_str());  // 字符串转整形
     }
 
     uint64_t GetProperty(const char* key,uint64_t defaultValue) const
@@ -201,7 +199,7 @@ public:
             //return default
             return defaultValue;
         //Return value
-        return atoll(it->second.c_str());
+        return atoll(it->second.c_str()); // 字符串转长长整形
     }
 
     bool GetProperty(const char* key,bool defaultValue) const

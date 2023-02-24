@@ -26,12 +26,12 @@ RET_CODE AudioCapturer::Init(const Properties properties)
     audio_test_ = properties.GetProperty("audio_test", 0);
     input_pcm_name_ = properties.GetProperty("input_pcm_name", "buweishui_48000_2_s16le.pcm");
     sample_rate_ = properties.GetProperty("sample_rate", 48000);
-    channels_  = properties.GetProperty("channels", 2);
-    byte_per_sample_  = properties.GetProperty("byte_per_sample", 2);    // 单个采样点的字节
+    channels_    = properties.GetProperty("channels", 2);
+    format_ = properties.GetProperty("format", AV_SAMPLE_FMT_S16);
+    byte_per_sample_  = properties.GetProperty("byte_per_sample", 2);
     nb_samples_  = properties.GetProperty("nb_samples", 1024);
-    format_ = properties.GetProperty("format", AV_SAMPLE_FMT_S16);  //  1
 
-    pcm_buf_size_ = byte_per_sample_ * channels_ *  nb_samples_;
+    pcm_buf_size_ = byte_per_sample_ * channels_ *  nb_samples_;  // 采集一个音频帧的大小，单位字节
     pcm_buf_ = new uint8_t[pcm_buf_size_];
     if(!pcm_buf_)
     {

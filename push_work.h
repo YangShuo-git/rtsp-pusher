@@ -23,19 +23,21 @@ private:
     void YuvCallback(uint8_t* yuv, int32_t size);
 
 private:
-    AudioCapturer *audio_capturer_ = NULL;
+    AudioCapturer *audio_capturer_ = nullptr;
+    VideoCapturer *video_capturer_ = nullptr;
+
     // 音频test模式
     int audio_test_ = 0;
     std::string input_pcm_name_;
 
-    // 麦克风采样属性
-    int mic_sample_rate_ = 48000;
-    int mic_sample_fmt_ = AV_SAMPLE_FMT_S16;
-    int mic_channels_ = 2;
-
     // 视频test模式
     int video_test_ = 0;
     std::string input_yuv_name_;
+
+    // 麦克风采样属性
+    int mic_sample_rate_ = 48000;  // 采样率
+    int mic_sample_fmt_ = AV_SAMPLE_FMT_S16;  // 采样格式
+    int mic_channels_ = 2;  // 通道数
 
     // 桌面录制属性
     int desktop_x_ = 0;
@@ -44,9 +46,6 @@ private:
     int desktop_height_ = 1080;
     int desktop_format_ = AV_PIX_FMT_YUV420P;
     int desktop_fps_ = 25;
-
-    // 视频相关
-    VideoCapturer *video_capturer_ = nullptr;
 };
 
 #endif // _PUSH_WORK_H_
