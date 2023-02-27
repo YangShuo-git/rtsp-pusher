@@ -17,6 +17,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     video_test_ = properties.GetProperty("video_test", 0);
     input_yuv_name_ = properties.GetProperty("input_yuv_name", "input_1280_720_420p.yuv");
 
+#if 0
     // 麦克风采样属性
     mic_sample_rate_ = properties.GetProperty("mic_sample_rate", 48000);
     mic_sample_fmt_ = properties.GetProperty("mic_sample_fmt", AV_SAMPLE_FMT_S16);
@@ -30,12 +31,14 @@ RET_CODE PushWork::Init(const Properties &properties)
     desktop_height_ = properties.GetProperty("desktop_height", 1080);
     desktop_format_ = properties.GetProperty("desktop_pixel_format", AV_PIX_FMT_YUV420P);
     desktop_fps_ = properties.GetProperty("desktop_fps", 25);
+#endif
 
     // 设置音频捕获
     audio_capturer_ = new AudioCapturer();
     Properties aud_cap_properties;
     aud_cap_properties.SetProperty("audio_test", 1);
     aud_cap_properties.SetProperty("input_pcm_name", input_pcm_name_);
+    aud_cap_properties.SetProperty("sample_rate", 48000);
     aud_cap_properties.SetProperty("format", AV_SAMPLE_FMT_S16);
     aud_cap_properties.SetProperty("channels", mic_channels_);
     aud_cap_properties.SetProperty("nb_samples", 1024);     // 由编码器提供

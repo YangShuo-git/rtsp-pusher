@@ -14,12 +14,10 @@ public:
     virtual ~AudioCapturer();
 
     RET_CODE Init(const Properties properties);
-
     virtual void Loop();
     void AddCallback(function<void(uint8_t*, int32_t)> callback);
 
 private:
-
     // PCM file只是用来测试, 写死为采样率48Khz 2通道 s16格式
     // 1帧1024采样点持续的时间21.333333333333333333333333333333ms
     int openPcmFile(const char *file_name);
@@ -31,7 +29,7 @@ private:
     FILE *pcm_fp_ = nullptr;
     int64_t pcm_start_time_ = 0;
     double pcm_total_duration_ = 0; // 推流时长的统计
-    double frame_duration_ = 23.2;
+    double frame_duration_ = 23.2;  // 默认帧长23.2ms
 
     std::function<void(uint8_t *, int32_t)> callback_get_pcm_;
     uint8_t *pcm_buf_;

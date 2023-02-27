@@ -57,6 +57,7 @@ void VideoCapturer::Loop()
         {
             if(!is_first_frame_) {
                 is_first_frame_ = true;
+                LogInfo("First time to read yuv file");
                 LogInfo("%s:t%u", AVPublishTime::GetInstance()->getVInTag(),
                         AVPublishTime::GetInstance()->getCurrenTime());
             }

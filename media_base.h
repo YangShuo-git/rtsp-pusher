@@ -23,6 +23,7 @@ enum RET_CODE
     RET_ERR_EOF
 };
 
+// Properties就是一个改造后的map，以键值对的形式来存放属性
 class Properties: public std::map<std::string,std::string>
 {
 public:
@@ -182,7 +183,7 @@ public:
             //return default
             return defaultValue;
         //Return value
-        return atoi(it->second.c_str());  // 字符串转整形
+        return atoi(it->second.c_str());  // atoi字符串转整形
     }
 
     uint64_t GetProperty(const char* key,uint64_t defaultValue) const
@@ -199,7 +200,7 @@ public:
             //return default
             return defaultValue;
         //Return value
-        return atoll(it->second.c_str()); // 字符串转长长整形
+        return atoll(it->second.c_str()); // atoll字符串转长长整形
     }
 
     bool GetProperty(const char* key,bool defaultValue) const
