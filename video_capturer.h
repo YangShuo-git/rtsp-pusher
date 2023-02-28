@@ -31,6 +31,7 @@ private:
     int openYuvFile(const char *file_name);
     int readYuvFile(uint8_t *yuv_buf, int32_t yuv_buf_size);
     int closeYuvFile();
+
     int64_t yuv_start_time_ = 0;     // 起始时间
     double yuv_total_duration_ = 0;  // YUV读取累计的时间
     FILE *yuv_fp_ = nullptr;
@@ -38,8 +39,7 @@ private:
     int yuv_buf_size = 0;
 
 
-    function<void(uint8_t*, int32_t)> callable_object_ = nullptr;
-
+    function<void(uint8_t*, int32_t)> callback_get_yuv_ = nullptr;
     bool is_first_frame_ = false;
 };
 

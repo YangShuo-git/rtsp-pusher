@@ -31,7 +31,6 @@ private:
     double pcm_total_duration_ = 0; // 推流时长的统计
     double frame_duration_ = 23.2;  // 默认帧长23.2ms
 
-    std::function<void(uint8_t *, int32_t)> callback_get_pcm_;
     uint8_t *pcm_buf_;
     int32_t pcm_buf_size_;
     bool is_first_time_ = false;
@@ -40,6 +39,8 @@ private:
     int channels_ = 2;
     int nb_samples_ = 1024;  // 一个音频帧的采样点
     int byte_per_sample_ = 2;  // 一个采样点的大小，单位字节
+
+    std::function<void(uint8_t *, int32_t)> callback_get_pcm_;
 };
 
 #endif // _AUDIO_CAPTURER_H_

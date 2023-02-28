@@ -28,7 +28,8 @@ RET_CODE VideoCapturer::Init(const Properties &properties)
     height_ = properties.GetProperty("height", 1080);
     pixel_format_ = properties.GetProperty("pixel_format", 0);
     fps_ = properties.GetProperty("fps", 25);
-    frame_duration_ = 1000.0 / fps_;    // 单位是毫秒的
+
+    frame_duration_ = 1000.0 / fps_;    // 帧长，单位ms
 
     if(openYuvFile(input_yuv_name_.c_str()) != 0)
     {
@@ -41,13 +42,13 @@ RET_CODE VideoCapturer::Init(const Properties &properties)
 
 void VideoCapturer::Loop()
 {
-    LogInfo("into loop");
+    LogInfo("into loop: VideoCapturer");
 
     yuv_buf_size =(width_ + width_%2)  * (height_ + height_%2) * 1.5;   // 一帧yuv占用的字节数量
-    yuv_buf_ = new uint8_t[yuv_buf_size];
+    yuv_buf_ = new uint8_t[yuv_buf_size];  // 给一帧yuv分配内存
+
     yuv_total_duration_ = 0;
     yuv_start_time_ = TimesUtil::GetTimeMillisecond();
-    LogInfo("into loop while");
 
     while (true) {
         if(request_abort_) {
@@ -61,9 +62,9 @@ void VideoCapturer::Loop()
                 LogInfo("%s:t%u", AVPublishTime::GetInstance()->getVInTag(),
                         AVPublishTime::GetInstance()->getCurrenTime());
             }
-            if(callable_object_)
+            if(callback_get_yuv_)
             {
-                callable_object_(yuv_buf_, yuv_buf_size);
+                callback_get_yuv_(yuv_buf_, yuv_buf_size);
             }
         }
 
@@ -75,7 +76,7 @@ void VideoCapturer::Loop()
 
 void VideoCapturer::AddCallback(function<void (uint8_t *, int32_t)> callback)
 {
-    callable_object_ = callback;
+    callback_get_yuv_ = callback;
 }
 
 int VideoCapturer::openYuvFile(const char *file_name)
