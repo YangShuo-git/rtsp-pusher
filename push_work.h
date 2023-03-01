@@ -4,6 +4,7 @@
 #include <string>
 #include "audio_capturer.h"
 #include "video_capturer.h"
+#include "aac_encoder.h"
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -26,18 +27,28 @@ private:
     AudioCapturer *audio_capturer_ = nullptr;
     VideoCapturer *video_capturer_ = nullptr;
 
+    AACEncoder *audio_encoder_;
+
     // 音频test模式
     int audio_test_ = 0;
     std::string input_pcm_name_;
-
-    // 视频test模式
-    int video_test_ = 0;
-    std::string input_yuv_name_;
+    uint8_t *fltp_buf_ = nullptr;
 
     // 麦克风采样属性
     int mic_sample_rate_ = 48000;  // 采样率
     int mic_sample_fmt_ = AV_SAMPLE_FMT_S16;  // 采样格式
     int mic_channels_ = 2;  // 通道数
+
+    // 音频编码参数
+    int audio_sample_rate_ = 48000;
+    int audio_sample_fmt_ ; // 具体由编码器决定，从编码器读取相应的信息
+    int audio_channels_ = 2;
+    int audio_bitrate_ = 128*1024;
+    int audio_ch_layout_;    // 由audio_channels_决定
+
+    // 视频test模式
+    int video_test_ = 0;
+    std::string input_yuv_name_;
 
     // 桌面录制属性
     int desktop_x_ = 0;
@@ -46,6 +57,8 @@ private:
     int desktop_height_ = 1080;
     int desktop_format_ = AV_PIX_FMT_YUV420P;
     int desktop_fps_ = 25;
+
+    FILE *aac_fp_ = nullptr;
 };
 
 #endif // _PUSH_WORK_H_

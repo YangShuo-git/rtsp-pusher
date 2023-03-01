@@ -45,6 +45,11 @@ int main()
 
 #endif
 
+        // 音频编码属性
+        properties.SetProperty("audio_sample_rate", 48000);
+        properties.SetProperty("audio_channels", 2);
+        properties.SetProperty("audio_bitrate", 64*1024);
+
         if(push_work.Init(properties) != RET_OK) {
             LogError("PushWork init failed");
             return -1;
