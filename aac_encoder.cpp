@@ -19,9 +19,9 @@ RET_CODE AACEncoder::Init(const Properties &properties)
     // 获取参数
     sample_rate_ = properties.GetProperty("sample_rate", 48000);
     channels_ = properties.GetProperty("channels", 2);
+    bitrate_  = properties.GetProperty("bitrate", 128*1024);
     channel_layout_ = properties.GetProperty("channel_layout",
                                              (int)av_get_default_channel_layout(channels_));
-    bitrate_ = properties.GetProperty("bitrate", 128*1024);
 
     // 查找编码器
     codec_ = avcodec_find_encoder(AV_CODEC_ID_AAC);

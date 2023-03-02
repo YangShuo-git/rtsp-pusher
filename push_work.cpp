@@ -8,8 +8,31 @@ PushWork::PushWork()
 
 }
 
+PushWork::~PushWork()
+{
+    // 从源头开始释放资源
+    // 先释放音频、视频捕获
+    if(audio_capturer_) {
+        delete audio_capturer_;
+    }
+    if(video_capturer_) {
+        delete video_capturer_;
+    }
+    if(audio_encoder_) {
+        delete audio_encoder_;
+    }
+    if(fltp_buf_) {
+        av_free(fltp_buf_);
+    }
+    if(audio_frame_) {
+        av_frame_free(&audio_frame_);
+    }
+    LogInfo("~PushWork()");
+}
+
 RET_CODE PushWork::Init(const Properties &properties)
 {
+    int ret = 0;
     // 音频test模式
     audio_test_ = properties.GetProperty("audio_test", 0);
     input_pcm_name_ = properties.GetProperty("input_pcm_name", "input_48k_2ch_s16.pcm");
@@ -34,7 +57,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     desktop_fps_ = properties.GetProperty("desktop_fps", 25);
 #endif
 
-    // 设置音频编码器，先音频捕获初始化
+    // 设置音频编码器
     audio_encoder_ = new AACEncoder();
     if(!audio_encoder_)
     {
@@ -44,11 +67,41 @@ RET_CODE PushWork::Init(const Properties &properties)
     Properties  aud_codec_properties;
     aud_codec_properties.SetProperty("sample_rate", audio_sample_rate_);
     aud_codec_properties.SetProperty("channels", audio_channels_);
-    aud_codec_properties.SetProperty("bitrate", audio_bitrate_);        // 这里没有去设置采样格式
-    // 需要什么样的采样格式是从编码器读取出来的
+    aud_codec_properties.SetProperty("bitrate", audio_bitrate_);   // 这里没有去设置采样格式  需要什么样的采样格式是从编码器读取出来的
+    
     if(audio_encoder_->Init(aud_codec_properties) != RET_OK)
     {
         LogError("Fail to AACEncoder Init");
+        return RET_FAIL;
+    }
+
+    int frame_bytes2 = 0;
+    // 默认读取出来的数据是s16的，编码器需要的是fltp, 需要做重采样
+    // 手动把s16转成fltp
+    fltp_buf_size_ = av_samples_get_buffer_size(NULL, audio_encoder_->GetChannels(),
+                                              audio_encoder_->GetFrameSamples(),
+                                              (enum AVSampleFormat)audio_encoder_->GetFormat(), 1);
+    fltp_buf_ = (uint8_t *)av_malloc(fltp_buf_size_);
+    if(!fltp_buf_) {
+        LogError("Fail to fltp_buf_ av_malloc");
+        return RET_ERR_OUTOFMEMORY;
+    }
+
+    audio_frame_ = av_frame_alloc();
+    audio_frame_->format = audio_encoder_->GetFormat();
+    audio_frame_->format = AV_SAMPLE_FMT_FLTP;
+    audio_frame_->nb_samples = audio_encoder_->GetFrameSamples();
+    audio_frame_->channels = audio_encoder_->GetChannels();
+    audio_frame_->channel_layout = audio_encoder_->GetChannelLayout();
+    frame_bytes2  = audio_encoder_->GetFrameBytes();
+    if(fltp_buf_size_ != frame_bytes2) {
+        LogError("frame_bytes1:%d != frame_bytes2:%d", fltp_buf_size_, frame_bytes2);
+        return RET_FAIL;
+    }
+
+    ret = av_frame_get_buffer(audio_frame_, 0);
+    if(ret < 0) {
+        LogError("Fail to av_frame_get_buffer ");
         return RET_FAIL;
     }
 
@@ -65,7 +118,7 @@ RET_CODE PushWork::Init(const Properties &properties)
 
     if(audio_capturer_->Init(aud_cap_properties) != RET_OK)
     {
-        LogError("AudioCapturer Init failed");
+        LogError("Fail to Init AudioCapturer");
         return RET_FAIL;
     }
     audio_capturer_->AddCallback(std::bind(&PushWork::PcmCallback, this, 
@@ -73,7 +126,7 @@ RET_CODE PushWork::Init(const Properties &properties)
                                            std::placeholders::_2));
     if(audio_capturer_->Start()!= RET_OK) 
     {
-         LogError("AudioCapturer Start failed");
+         LogError("Fail to Start AudioCapturer");
         return RET_FAIL;
     }
 
@@ -87,7 +140,7 @@ RET_CODE PushWork::Init(const Properties &properties)
 
     if(video_capturer_->Init(vid_cap_properties) != RET_OK)
     {
-        LogError("VideoCapturer Init failed");
+        LogError("Fail to Init VideoCapturer");
         return RET_FAIL;
     }
 //    video_nalu_buf = new uint8_t[VIDEO_NALU_BUF_MAX_SIZE];
@@ -95,7 +148,7 @@ RET_CODE PushWork::Init(const Properties &properties)
                                           std::placeholders::_1,
                                           std::placeholders::_2));
     if(video_capturer_->Start()!= RET_OK) {
-        LogError("VideoCapturer Start failed");
+        LogError("Fail to Start VideoCapturer");
         return RET_FAIL;
     }
 
@@ -117,56 +170,53 @@ RET_CODE PushWork::DeInit()
     }
 }
 
+// s16交错模式 转为 float planar格式  只支持2通道 
+void s16le_convert_to_fltp(short *s16le, float *fltp, int nb_samples) {
+    float *fltp_l = fltp;   // -1~1
+    float *fltp_r = fltp + nb_samples;  // 要加一帧的采样点，才会变为右
+    for(int i = 0; i < nb_samples; i++) {
+        fltp_l[i] = s16le[i*2]/32768.0;     // 0 2 4
+        fltp_r[i] = s16le[i*2+1]/32768.0;   // 1 3 5
+    }
+}
+
 void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
 {
     int ret = 0;
-
-    int frame_bytes1 = 0;
-    int frame_bytes2 = 0;
-    // 默认读取出来的数据是s16的，编码器需要的是fltp, 需要做重采样
-    // 手动把s16转成fltp
-    frame_bytes1 = 1024 * 2 * 4;
-    if (!fltp_buf_)
+    if(!pcm_s16le_fp_)
     {
-        fltp_buf_ = new uint8_t[frame_bytes1];
+        pcm_s16le_fp_ = fopen("push_dump_s16le.pcm", "wb");
     }
-    
-    int16_t *s16 = (int16_t *)pcm;
-    float_t *fltp = (float_t *)fltp_buf_;
-    for(int i = 0; i < 1024; i++) {
-        // s16[0],s16[1];s16[2],s16[3];s16[4],s16[5];
-        fltp[i]        =  s16[i*2 + 0]*1.0 / 32768; // 左通道  *2是因为我们默认现在是2通道  *1.0保证结果为float
-        fltp[1024 + i] =  s16[i*2 + 1]*1.0 / 32768; // 右通道
-    }
-
-    AVFrame *audio_frame = av_frame_alloc();
-    audio_frame->format = audio_encoder_->GetFormat();
-    audio_frame->format = AV_SAMPLE_FMT_FLTP;
-    audio_frame->nb_samples = audio_encoder_->GetFrameSamples();
-    audio_frame->channels = audio_encoder_->GetChannels();
-    audio_frame->channel_layout = audio_encoder_->GetChannelLayout();
-    frame_bytes2  = audio_encoder_->GetFrameBytes();
-
-    if (frame_bytes1 != frame_bytes2)
+    if(pcm_s16le_fp_)
     {
-        LogError("frame_bytes1 = %d, frame_bytes2 = %d", frame_bytes1, frame_bytes2);
+        // ffplay -ar 48000 -channels 2 -f s16le  -i push_dump_s16le.pcm
+        fwrite(pcm, 1, size, pcm_s16le_fp_);
+        fflush(pcm_s16le_fp_);
+    }
+    // 这里就约定好，音频捕获的时候，采样点数和编码器需要的点数是一样的
+    s16le_convert_to_fltp((short *)pcm, (float *)fltp_buf_, audio_frame_->nb_samples);
+    ret = av_frame_make_writable(audio_frame_);
+    if(ret < 0) {
+        LogError("Fail to av_frame_make_writable");
         return;
     }
-    
-    if((ret = avcodec_fill_audio_frame(audio_frame, audio_encoder_->GetChannels(),
-                                      (enum AVSampleFormat) audio_encoder_->GetFormat(), fltp_buf_, frame_bytes1, 0)) < 0)
-    {
-        // char buf[1024] = { 0 };
-        // av_strerror(ret, buf, sizeof(buf) - 1);
-        // LogError("Fail to avcodec_fill_audio_frame:%s", buf);
-        LogError("avcodec_fill_audio_frame failed");
-        return ;
+    // 将fltp_buf_写入frame
+    ret = av_samples_fill_arrays(audio_frame_->data,
+                                 audio_frame_->linesize,
+                                 fltp_buf_,
+                                 audio_frame_->channels,
+                                 audio_frame_->nb_samples,
+                                 (AVSampleFormat)audio_frame_->format,
+                                 0);
+    if(ret < 0) {
+        LogError("Fail to av_samples_fill_arrays");
+        return;
     }
 
     int64_t pts = (int64_t)AVPublishTime::GetInstance()->get_audio_pts();
     int pkt_frame = 0;
     RET_CODE encode_ret = RET_OK;
-    AVPacket *packet = audio_encoder_->Encode(audio_frame, pts, 0, &pkt_frame, &encode_ret);
+    AVPacket *packet = audio_encoder_->Encode(audio_frame_, pts, 0, &pkt_frame, &encode_ret);
     if(encode_ret == RET_OK && packet) 
     {
         if(!aac_fp_) 
@@ -174,7 +224,7 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
             aac_fp_ = fopen("push_dump.aac", "wb");
             if(!aac_fp_) 
             {
-                LogError("fopen push_dump.aac failed");
+                LogError("Fail to fopen push_dump.aac");
                 return;
             }
         }
@@ -182,7 +232,7 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
         {
             uint8_t adts_header[7];
             if(audio_encoder_->GetAdtsHeader(adts_header, packet->size) != RET_OK) {
-                LogError("GetAdtsHeader failed");
+                LogError("Fail to GetAdtsHeader");
                 return;
             }
             fwrite(adts_header, 1, 7, aac_fp_);
@@ -194,8 +244,10 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
     if(packet) {
         LogInfo("PcmCallback packet->pts:%ld", packet->pts);
         av_packet_free(&packet);
+    }else
+    {
+        LogInfo("packet is null");
     }
-    av_frame_free(&audio_frame);
 }
 
 void PushWork::YuvCallback(uint8_t *yuv, int32_t size)

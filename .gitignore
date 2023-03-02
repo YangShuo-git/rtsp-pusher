@@ -31,6 +31,12 @@
 *.out
 *.app
 
+# Media Files
+*.pcm
+*.aac
+*.h264
+*.yuv
+
 build/*
 res/*
 

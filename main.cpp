@@ -14,7 +14,7 @@ int main()
 {
     init_logger("rtsp_push.log", S_INFO);
 
-    {
+    {  // 测试生命周期
         PushWork push_work;
         Properties properties;
 
@@ -57,7 +57,7 @@ int main()
         int count = 0;
         while (true) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            if(count++ > 5)
+            if(count++ > 10)
                 break;
         }
 

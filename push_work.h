@@ -17,6 +17,7 @@ class PushWork
 {
 public:
     PushWork();
+    ~PushWork();
     RET_CODE Init(const Properties &properties);
     RET_CODE DeInit();
 private:
@@ -28,11 +29,15 @@ private:
     VideoCapturer *video_capturer_ = nullptr;
 
     AACEncoder *audio_encoder_;
+    AVFrame *audio_frame_ = nullptr;
+    FILE *pcm_s16le_fp_ = nullptr;
+    FILE *aac_fp_ = nullptr;
+    uint8_t *fltp_buf_ = nullptr;
+    int fltp_buf_size_ = 0;
 
     // 音频test模式
     int audio_test_ = 0;
     std::string input_pcm_name_;
-    uint8_t *fltp_buf_ = nullptr;
 
     // 麦克风采样属性
     int mic_sample_rate_ = 48000;  // 采样率
@@ -41,10 +46,10 @@ private:
 
     // 音频编码参数
     int audio_sample_rate_ = 48000;
-    int audio_sample_fmt_ ; // 具体由编码器决定，从编码器读取相应的信息
+    int audio_sample_fmt_ ;  // 具体由编码器决定，从编码器读取相应的信息
     int audio_channels_ = 2;
     int audio_bitrate_ = 128*1024;
-    int audio_ch_layout_;    // 由audio_channels_决定
+    int audio_ch_layout_;  // 由audio_channels_决定
 
     // 视频test模式
     int video_test_ = 0;
@@ -58,7 +63,6 @@ private:
     int desktop_format_ = AV_PIX_FMT_YUV420P;
     int desktop_fps_ = 25;
 
-    FILE *aac_fp_ = nullptr;
 };
 
 #endif // _PUSH_WORK_H_
