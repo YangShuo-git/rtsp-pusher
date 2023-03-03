@@ -65,8 +65,8 @@ private:
     int bitrate_     = 128*1024;
     int channel_layout_ = AV_CH_LAYOUT_STEREO;
 
-    AVCodec *codec_        = nullptr;
-    AVCodecContext  *ctx_  = nullptr;
+    AVCodec *codec_        = nullptr;  // 编码器
+    AVCodecContext  *ctx_  = nullptr;  // 编码器上下文
 };
 
 

@@ -14,7 +14,7 @@ int main()
 {
     init_logger("rtsp_push.log", S_INFO);
 
-    {  // 测试生命周期
+    {   // 测试生命周期
         PushWork push_work;
         Properties properties;
 
@@ -22,7 +22,7 @@ int main()
         properties.SetProperty("audio_test", 1);
         properties.SetProperty("input_pcm_name", "./res/buweishui_48000_2_s16le.pcm");
 
-        //视频test模式
+        // 视频test模式
         properties.SetProperty("video_test", 1);
         properties.SetProperty("input_yuv_name", "./res/720x480_25fps_420p.yuv");
         properties.SetProperty("video_bitrate", 512*1024);  // 设置码率
@@ -51,16 +51,15 @@ int main()
         properties.SetProperty("audio_bitrate", 64*1024);
 
         if(push_work.Init(properties) != RET_OK) {
-            LogError("PushWork init failed");
+            LogError("Fail to init PushWork");
             return -1;
         }
         int count = 0;
-        while (true) {
+        while (true) { // 这里阻塞的时间，就是采集的时间
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            if(count++ > 10)
+            if(count++ > 5)
                 break;
         }
-
     }
     LogInfo("main finish");
     return 0;

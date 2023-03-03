@@ -33,11 +33,9 @@ PushWork::~PushWork()
 RET_CODE PushWork::Init(const Properties &properties)
 {
     int ret = 0;
-    // 音频test模式
+    // 文件模式（代替物理采集）
     audio_test_ = properties.GetProperty("audio_test", 0);
     input_pcm_name_ = properties.GetProperty("input_pcm_name", "input_48k_2ch_s16.pcm");
-
-    // 视频test模式
     video_test_ = properties.GetProperty("video_test", 0);
     input_yuv_name_ = properties.GetProperty("input_yuv_name", "input_1280_720_420p.yuv");
 
@@ -67,7 +65,8 @@ RET_CODE PushWork::Init(const Properties &properties)
     Properties  aud_codec_properties;
     aud_codec_properties.SetProperty("sample_rate", audio_sample_rate_);
     aud_codec_properties.SetProperty("channels", audio_channels_);
-    aud_codec_properties.SetProperty("bitrate", audio_bitrate_);   // 这里没有去设置采样格式  需要什么样的采样格式是从编码器读取出来的
+    aud_codec_properties.SetProperty("bitrate", audio_bitrate_);
+    // 这里的属性没有去设置采样格式  因为采样格式是从new出来的编码器读取出来的
     
     if(audio_encoder_->Init(aud_codec_properties) != RET_OK)
     {
@@ -75,12 +74,14 @@ RET_CODE PushWork::Init(const Properties &properties)
         return RET_FAIL;
     }
 
-    int frame_bytes2 = 0;
     // 默认读取出来的数据是s16的，编码器需要的是fltp, 需要做重采样
     // 手动把s16转成fltp
-    fltp_buf_size_ = av_samples_get_buffer_size(NULL, audio_encoder_->GetChannels(),
+    int frame_bytes2 = 0;
+    frame_bytes2 = audio_encoder_->GetFrameBytes(); // s16 一帧的字节数
+
+    fltp_buf_size_ = av_samples_get_buffer_size(NULL, audio_encoder_->GetChannels(),  
                                               audio_encoder_->GetFrameSamples(),
-                                              (enum AVSampleFormat)audio_encoder_->GetFormat(), 1);
+                                              (enum AVSampleFormat)audio_encoder_->GetFormat(), 1);  // fltp 一帧的字节数
     fltp_buf_ = (uint8_t *)av_malloc(fltp_buf_size_);
     if(!fltp_buf_) {
         LogError("Fail to fltp_buf_ av_malloc");
@@ -89,13 +90,11 @@ RET_CODE PushWork::Init(const Properties &properties)
 
     audio_frame_ = av_frame_alloc();
     audio_frame_->format = audio_encoder_->GetFormat();
-    audio_frame_->format = AV_SAMPLE_FMT_FLTP;
     audio_frame_->nb_samples = audio_encoder_->GetFrameSamples();
     audio_frame_->channels = audio_encoder_->GetChannels();
     audio_frame_->channel_layout = audio_encoder_->GetChannelLayout();
-    frame_bytes2  = audio_encoder_->GetFrameBytes();
     if(fltp_buf_size_ != frame_bytes2) {
-        LogError("frame_bytes1:%d != frame_bytes2:%d", fltp_buf_size_, frame_bytes2);
+        LogError("fltp_buf_size_:%d != frame_bytes2:%d", fltp_buf_size_, frame_bytes2);
         return RET_FAIL;
     }
 
@@ -175,8 +174,8 @@ void s16le_convert_to_fltp(short *s16le, float *fltp, int nb_samples) {
     float *fltp_l = fltp;   // -1~1
     float *fltp_r = fltp + nb_samples;  // 要加一帧的采样点，才会变为右
     for(int i = 0; i < nb_samples; i++) {
-        fltp_l[i] = s16le[i*2]/32768.0;     // 0 2 4
-        fltp_r[i] = s16le[i*2+1]/32768.0;   // 1 3 5
+        fltp_l[i] = s16le[i*2]/32768.0;     // 0 2 4 表示偶数
+        fltp_r[i] = s16le[i*2+1]/32768.0;   // 1 3 5 表示奇数
     }
 }
 
@@ -193,7 +192,7 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
         fwrite(pcm, 1, size, pcm_s16le_fp_);
         fflush(pcm_s16le_fp_);
     }
-    // 这里就约定好，音频捕获的时候，采样点数和编码器需要的点数是一样的
+    // 这里就约定好，音频捕获的时候，一帧的采样点和编码器需要的点数是一样的
     s16le_convert_to_fltp((short *)pcm, (float *)fltp_buf_, audio_frame_->nb_samples);
     ret = av_frame_make_writable(audio_frame_);
     if(ret < 0) {
@@ -213,6 +212,7 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
         return;
     }
 
+    // 打上时间戳
     int64_t pts = (int64_t)AVPublishTime::GetInstance()->get_audio_pts();
     int pkt_frame = 0;
     RET_CODE encode_ret = RET_OK;

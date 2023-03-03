@@ -16,7 +16,7 @@ AACEncoder::~AACEncoder()
 
 RET_CODE AACEncoder::Init(const Properties &properties)
 {
-    // 获取参数
+    // 配置编码器所需的参数
     sample_rate_ = properties.GetProperty("sample_rate", 48000);
     channels_ = properties.GetProperty("channels", 2);
     bitrate_  = properties.GetProperty("bitrate", 128*1024);
@@ -40,7 +40,7 @@ RET_CODE AACEncoder::Init(const Properties &properties)
 
     // 设置参数
     ctx_->sample_rate   = sample_rate_;
-    ctx_->sample_fmt    = AV_SAMPLE_FMT_FLTP;  // 默认aac编码需要planar格式PCM， 如果是fdk-aac，会不一样
+    ctx_->sample_fmt    = AV_SAMPLE_FMT_FLTP;  // 这里默认是aac编码：planar格式PCM， 如果是fdk-aac，会不一样
     ctx_->channels      = channels_;
     ctx_->channel_layout= channel_layout_;
     ctx_->bit_rate      = bitrate_;

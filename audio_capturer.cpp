@@ -39,7 +39,7 @@ RET_CODE AudioCapturer::Init(const Properties properties)
         return RET_ERR_OUTOFMEMORY;
     }
 
-    // 打开测试文件
+    // 打开测试文件，代替物理采集
     if(openPcmFile(input_pcm_name_.c_str()) < 0)
     {
         LogError("openPcmFile %s failed", input_pcm_name_.c_str());
