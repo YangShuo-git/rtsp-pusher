@@ -14,10 +14,10 @@ public:
     virtual ~AACEncoder();
 
     /**
-     * "sample_rate", 采样率，默认48000
-     * "channels",通道数量 ，默认2
-     * "channel_layout"， 通道布局，默认根据channels获取默认的
-     * "bitrate"， 比特率，默认128*1024
+     * "sample_rate"     采样率，默认48000
+     * "channels"        通道数量 ，默认2
+     * "channel_layout"  通道布局，默认根据channels获取默认的
+     * "bitrate"         比特率，默认128*1024
      */
     RET_CODE Init(const Properties &properties);
 
