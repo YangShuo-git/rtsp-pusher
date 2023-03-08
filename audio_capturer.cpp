@@ -24,7 +24,7 @@ AudioCapturer::~AudioCapturer()
 RET_CODE AudioCapturer::Init(const Properties properties)
 {
     audio_test_  = properties.GetProperty("audio_test", 0);
-    input_pcm_name_ = properties.GetProperty("input_pcm_name", "buweishui_48000_2_s16le.pcm");
+    input_pcm_name_ = properties.GetProperty("input_pcm_name", "48000_2_s16le.pcm");
     sample_rate_    = properties.GetProperty("sample_rate", 48000);
     format_      = properties.GetProperty("format", AV_SAMPLE_FMT_S16);
     channels_    = properties.GetProperty("channels", 2);

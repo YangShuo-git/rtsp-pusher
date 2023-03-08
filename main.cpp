@@ -20,7 +20,7 @@ int main()
 
         // 音频test模式
         properties.SetProperty("audio_test", 1);
-        properties.SetProperty("input_pcm_name", "./res/buweishui_48000_2_s16le.pcm");
+        properties.SetProperty("input_pcm_name", "./res/48000_2_s16le.pcm");
 
         // 视频test模式
         properties.SetProperty("video_test", 1);

@@ -77,11 +77,10 @@ RET_CODE PushWork::Init(const Properties &properties)
     // 默认读取出来的数据是s16的，编码器需要的是fltp, 需要做重采样
     // 手动把s16转成fltp
     int frame_bytes2 = 0;
-    frame_bytes2 = audio_encoder_->GetFrameBytes(); // s16 一帧的字节数
-
+    frame_bytes2 = audio_encoder_->GetFrameBytes(); // s16格式 一帧的字节数
     fltp_buf_size_ = av_samples_get_buffer_size(NULL, audio_encoder_->GetChannels(),  
                                               audio_encoder_->GetFrameSamples(),
-                                              (enum AVSampleFormat)audio_encoder_->GetFormat(), 1);  // fltp 一帧的字节数
+                                              (enum AVSampleFormat)audio_encoder_->GetFormat(), 1);  // fltp格式 一帧的字节数
     fltp_buf_ = (uint8_t *)av_malloc(fltp_buf_size_);
     if(!fltp_buf_) {
         LogError("Fail to fltp_buf_ av_malloc");
@@ -184,7 +183,7 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
     int ret = 0;
     if(!pcm_s16le_fp_)
     {
-        pcm_s16le_fp_ = fopen("push_dump_s16le.pcm", "wb");
+        pcm_s16le_fp_ = fopen("res/push_dump_s16le.pcm", "wb");
     }
     if(pcm_s16le_fp_)
     {
@@ -221,7 +220,7 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
     {
         if(!aac_fp_) 
         {
-            aac_fp_ = fopen("push_dump.aac", "wb");
+            aac_fp_ = fopen("res/push_dump.aac", "wb");
             if(!aac_fp_) 
             {
                 LogError("Fail to fopen push_dump.aac");
