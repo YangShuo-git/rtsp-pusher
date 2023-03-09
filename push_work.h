@@ -5,6 +5,7 @@
 #include "audio_capturer.h"
 #include "video_capturer.h"
 #include "aac_encoder.h"
+#include "h264_encoder.h"
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -35,6 +36,10 @@ private:
     uint8_t *fltp_buf_ = nullptr;
     int fltp_buf_size_ = 0;
 
+    H264Encoder *video_encoder_ = nullptr;
+    FILE *h264_fp_ = nullptr;
+
+
     // 文件模式
     int audio_test_ = 0;
     std::string input_pcm_name_;
@@ -60,6 +65,14 @@ private:
     int audio_channels_ = 2;
     int audio_bitrate_ = 128*1024;
     int audio_ch_layout_;  // 由audio_channels_决定
+
+    // 视频编码属性
+    int video_width_ = 1920;    // 宽
+    int video_height_ = 1080;   // 高
+    int video_fps_;             // 帧率
+    int video_gop_;
+    int video_bitrate_;
+    int video_b_frames_;   // b帧数量
 };
 
 #endif // _PUSH_WORK_H_

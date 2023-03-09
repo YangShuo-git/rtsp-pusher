@@ -59,7 +59,7 @@ int H264Encoder::Init(const Properties &properties)
     ctx_ = avcodec_alloc_context3(codec_);
     if(!ctx_) 
     {
-        LogError("Fail to avcodec_alloc_context3");
+        LogError("Fail to avcodec_alloc_context3: h264");
         return RET_FAIL;
     }
 
@@ -96,13 +96,14 @@ int H264Encoder::Init(const Properties &properties)
     // 从extradata读取sps pps
     if(ctx_->extradata) {
         LogInfo("extradata_size:%d", ctx_->extradata_size);
-        // 第一个为sps 7  第二个为pps 8
 
-        uint8_t *sps = ctx_->extradata + 4;  // 跳到数据
+        // 第一个为sps 7  第二个为pps 8
+        uint8_t *sps = ctx_->extradata + 4;  // 跳过起始码
         int sps_len = 0;
-        uint8_t *pps = NULL;
+        uint8_t *pps = nullptr;
         int pps_len = 0;
         uint8_t *data = ctx_->extradata + 4;
+
         for (int i = 0; i < ctx_->extradata_size - 4; ++i)
         {
             if (0 == data[i] && 0 == data[i + 1] && 0 == data[i + 2] && 1 == data[i + 3])
@@ -111,7 +112,7 @@ int H264Encoder::Init(const Properties &properties)
                 break;
             }
         }
-        sps_len = int(pps - sps) - 4;   // 4是起始码占用的字节
+        sps_len = int(pps - sps) - 4;
         pps_len = ctx_->extradata_size - 4*2 - sps_len;
         sps_.append(sps, sps + sps_len);
         pps_.append(pps, pps + pps_len);
@@ -125,13 +126,14 @@ int H264Encoder::Init(const Properties &properties)
     return RET_OK;
 }
 
-AVPacket *H264Encoder::Encode(uint8_t *yuv, int size, int64_t pts, int *pkt_frame,RET_CODE *ret)
+AVPacket *H264Encoder::Encode(uint8_t *yuv, int size, int64_t pts, int *pkt_frame, RET_CODE *ret)
 {
     int ret1 = 0;
     *ret = RET_OK;
     *pkt_frame = 0;
 
-    if(yuv) {
+    if(yuv) 
+    {
         int need_size = 0;
         need_size = av_image_fill_arrays(frame_->data, frame_->linesize, yuv,
                                          (AVPixelFormat)frame_->format,
@@ -139,47 +141,58 @@ AVPacket *H264Encoder::Encode(uint8_t *yuv, int size, int64_t pts, int *pkt_fram
         if(need_size != size)  {
             LogError("need_size:%d != size:%d", need_size, size);
             *ret = RET_FAIL;
-            return NULL;
+            return nullptr;
         }
         frame_->pts = pts;
         frame_->pict_type = AV_PICTURE_TYPE_NONE;
         ret1 = avcodec_send_frame(ctx_, frame_);
-    } else {
-        ret1 = avcodec_send_frame(ctx_, NULL);
+    } else 
+    {
+        ret1 = avcodec_send_frame(ctx_, nullptr);
     }
-    if(ret1 < 0) {  // <0 不能正常处理该frame
+    if(ret1 < 0)  // <0 不能正常处理该frame
+    {  
         char buf[1024] = { 0 };
         av_strerror(ret1, buf, sizeof(buf) - 1);
-        LogError("avcodec_send_frame failed:%s", buf);
+        LogError("Fail to avcodec_send_frame:%s", buf);
         *pkt_frame = 1;
-        if(ret1 == AVERROR(EAGAIN)) {  // 你赶紧读取packet，我frame send不进去了
+        if(ret1 == AVERROR(EAGAIN))  // 你赶紧读取packet，我frame send不进去了 
+        {  
             *ret = RET_ERR_EAGAIN;
-            return NULL;
-        } else if(ret1 == AVERROR_EOF) {
+            return nullptr;
+        } else if(ret1 == AVERROR_EOF) 
+        {
             *ret = RET_ERR_EOF;
-            return NULL;
-        } else {
-            *ret = RET_FAIL;   // 真正报错，这个encoder就只能销毁了
-            return NULL;
+            return nullptr;
+        } else // 真正报错，这个encoder就只能销毁了
+        {
+            *ret = RET_FAIL;   
+            return nullptr;
         }
     }
+
     AVPacket *packet = av_packet_alloc();
     ret1 = avcodec_receive_packet(ctx_, packet);
-    if(ret1 < 0) {
-        LogError("AAC: avcodec_receive_packet ret:%d", ret1);
+    if(ret1 < 0) 
+    {
+        LogError("H264: avcodec_receive_packet ret:%d", ret1);
         av_packet_free(&packet);
         *pkt_frame = 0;
-        if(ret1 == AVERROR(EAGAIN)) {       // 需要继续发送frame我们才有packet读取
+        if(ret1 == AVERROR(EAGAIN))  // 需要继续发送frame我们才有packet读取
+        {       
             *ret = RET_ERR_EAGAIN;
-            return NULL;
-        }else if(ret1 == AVERROR_EOF) {
-            *ret = RET_ERR_EOF;             // 不能在读取出来packet来了
-            return NULL;
-        } else {
-            *ret = RET_FAIL;            // 真正报错，这个encoder就只能销毁了
-            return NULL;
+            return nullptr;
+        }else if(ret1 == AVERROR_EOF)  // 不能在读取出来packet来了
+        {
+            *ret = RET_ERR_EOF;             
+            return nullptr;
+        } else  // 真正报错，这个encoder就只能销毁了
+        {
+            *ret = RET_FAIL;            
+            return nullptr;
         }
-    }else {
+    }else 
+    {
         *ret = RET_OK;
         return packet;
     }

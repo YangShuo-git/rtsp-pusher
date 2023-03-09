@@ -25,7 +25,6 @@ int main()
         // 视频test模式
         properties.SetProperty("video_test", 1);
         properties.SetProperty("input_yuv_name", "./res/720x480_25fps_420p.yuv");
-        properties.SetProperty("video_bitrate", 512*1024);  // 设置码率
 
 #if 0
         // 麦克风采样属性
@@ -50,12 +49,17 @@ int main()
         properties.SetProperty("audio_channels", 2);
         properties.SetProperty("audio_bitrate", 64*1024);
 
+        // 视频编码属性
+        properties.SetProperty("video_bitrate", 512*1024);  // 设置码率
+
+        // 启动push_work
         if(push_work.Init(properties) != RET_OK) {
             LogError("Fail to init PushWork");
             return -1;
         }
         int count = 0;
-        while (true) { // 这里阻塞的时间，就是采集的时间
+        while (true)  // 这里阻塞的时间，就是采集的时间
+        { 
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             if(count++ > 5)
                 break;

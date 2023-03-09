@@ -27,19 +27,22 @@ PushWork::~PushWork()
     if(audio_frame_) {
         av_frame_free(&audio_frame_);
     }
+    if(video_encoder_) {
+        delete video_encoder_;
+    }
     LogInfo("~PushWork()");
 }
 
 RET_CODE PushWork::Init(const Properties &properties)
 {
     int ret = 0;
+    
     // 文件模式（代替物理采集）
     audio_test_ = properties.GetProperty("audio_test", 0);
     input_pcm_name_ = properties.GetProperty("input_pcm_name", "input_48k_2ch_s16.pcm");
     video_test_ = properties.GetProperty("video_test", 0);
     input_yuv_name_ = properties.GetProperty("input_yuv_name", "input_1280_720_420p.yuv");
 
-#if 0
     // 麦克风采样属性
     mic_sample_rate_ = properties.GetProperty("mic_sample_rate", 48000);
     mic_sample_fmt_ = properties.GetProperty("mic_sample_fmt", AV_SAMPLE_FMT_S16);
@@ -53,9 +56,26 @@ RET_CODE PushWork::Init(const Properties &properties)
     desktop_height_ = properties.GetProperty("desktop_height", 1080);
     desktop_format_ = properties.GetProperty("desktop_pixel_format", AV_PIX_FMT_YUV420P);
     desktop_fps_ = properties.GetProperty("desktop_fps", 25);
-#endif
 
-    // 设置音频编码器
+    // 音频编码参数
+    audio_sample_rate_ = properties.GetProperty("audio_sample_rate", mic_sample_rate_);
+    audio_bitrate_ = properties.GetProperty("audio_bitrate", 128*1024);
+    audio_channels_ = properties.GetProperty("audio_channels", mic_channels_);
+    audio_ch_layout_ = av_get_default_channel_layout(audio_channels_);    // 由audio_channels_决定
+
+    // 视频编码属性
+    video_width_  = properties.GetProperty("video_width", desktop_width_); 
+    video_height_ = properties.GetProperty("video_height", desktop_height_); 
+    video_fps_ = properties.GetProperty("video_fps", desktop_fps_);             
+    video_gop_ = properties.GetProperty("video_gop", video_fps_);
+    video_bitrate_ = properties.GetProperty("video_bitrate", 1024*1024);   // 先默认1M fixedme
+    video_b_frames_ = properties.GetProperty("video_b_frames", 0); 
+
+    // 初始化publish time
+    AVPublishTime::GetInstance()->Rest();   // 推流打时间戳的问题
+
+
+    // 设置音频编码器（通过上面采集到的参数来进行设置）
     audio_encoder_ = new AACEncoder();
     if(!audio_encoder_)
     {
@@ -67,14 +87,29 @@ RET_CODE PushWork::Init(const Properties &properties)
     aud_codec_properties.SetProperty("channels", audio_channels_);
     aud_codec_properties.SetProperty("bitrate", audio_bitrate_);
     // 这里的属性没有去设置采样格式  因为采样格式是从new出来的编码器读取出来的
-    
     if(audio_encoder_->Init(aud_codec_properties) != RET_OK)
     {
         LogError("Fail to AACEncoder Init");
         return RET_FAIL;
     }
 
-    // 默认读取出来的数据是s16的，编码器需要的是fltp, 需要做重采样
+    // 设置视频编码器
+    video_encoder_ = new H264Encoder();
+    Properties vid_codec_properties;
+    vid_codec_properties.SetProperty("width", video_width_);
+    vid_codec_properties.SetProperty("height", video_height_);
+    vid_codec_properties.SetProperty("fps", video_fps_);            
+    vid_codec_properties.SetProperty("b_frames", video_b_frames_);
+    vid_codec_properties.SetProperty("bitrate", video_bitrate_); 
+    vid_codec_properties.SetProperty("gop", video_gop_);
+    if(video_encoder_->Init(vid_codec_properties) != RET_OK)
+    {
+        LogError("Fail to Init H264Encoder");
+        return RET_FAIL;
+    }
+
+
+    // 音频重采样 默认读取出来的数据是s16的，编码器需要的是fltp,
     // 手动把s16转成fltp
     int frame_bytes2 = 0;
     frame_bytes2 = audio_encoder_->GetFrameBytes(); // s16格式 一帧的字节数
@@ -102,6 +137,7 @@ RET_CODE PushWork::Init(const Properties &properties)
         LogError("Fail to av_frame_get_buffer ");
         return RET_FAIL;
     }
+
 
     // 设置音频捕获
     audio_capturer_ = new AudioCapturer();
@@ -145,7 +181,8 @@ RET_CODE PushWork::Init(const Properties &properties)
     video_capturer_->AddCallback(std::bind(&PushWork::YuvCallback, this,
                                           std::placeholders::_1,
                                           std::placeholders::_2));
-    if(video_capturer_->Start()!= RET_OK) {
+    if(video_capturer_->Start()!= RET_OK) 
+    {
         LogError("Fail to Start VideoCapturer");
         return RET_FAIL;
     }
@@ -183,7 +220,7 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
     int ret = 0;
     if(!pcm_s16le_fp_)
     {
-        pcm_s16le_fp_ = fopen("res/push_dump_s16le.pcm", "wb");
+        pcm_s16le_fp_ = fopen("build/push_dump_s16le.pcm", "wb");
     }
     if(pcm_s16le_fp_)
     {
@@ -220,7 +257,7 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
     {
         if(!aac_fp_) 
         {
-            aac_fp_ = fopen("res/push_dump.aac", "wb");
+            aac_fp_ = fopen("build/push_dump.aac", "wb");
             if(!aac_fp_) 
             {
                 LogError("Fail to fopen push_dump.aac");
@@ -251,5 +288,36 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
 
 void PushWork::YuvCallback(uint8_t *yuv, int32_t size)
 {
-    LogInfo("size:%d", size);
+    int64_t pts = (int64_t)AVPublishTime::GetInstance()->get_video_pts();
+    int pkt_frame = 0;
+    RET_CODE encode_ret = RET_OK;
+    AVPacket *packet = video_encoder_->Encode(yuv, size, pts, &pkt_frame, &encode_ret);
+    if(packet) {
+        if(!h264_fp_) 
+        {
+            h264_fp_ = fopen("build/push_dump.h264", "wb");
+            if(!h264_fp_) 
+            {
+                LogError("Fail to fopen push_dump.h264");
+                return;
+            }
+            // 写入sps 和pps
+            uint8_t start_code[] = {0, 0, 0, 1};
+            fwrite(start_code, 1, 4, h264_fp_);
+            fwrite(video_encoder_->get_sps_data(), 1, video_encoder_->get_sps_size(), h264_fp_);
+            fwrite(start_code, 1, 4, h264_fp_);
+            fwrite(video_encoder_->get_pps_data(), 1, video_encoder_->get_pps_size(), h264_fp_);
+        }
+
+        fwrite(packet->data, 1,  packet->size, h264_fp_);
+
+        fflush(h264_fp_);
+    }
+    LogInfo("YuvCallback pts:%ld", pts);
+    if(packet) {
+        LogInfo("YuvCallback packet->pts:%ld", packet->pts);
+        av_packet_free(&packet);
+    }else {
+        LogInfo("packet is null");
+    }
 }

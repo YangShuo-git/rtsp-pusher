@@ -41,10 +41,10 @@ private:
     int height_ = 0;
     int fps_ = 0;        // 帧率
     int b_frames_ = 0;   // 连续B帧的数量  有b帧，一定有延迟
-    int bitrate_ = 0;    // 码率
-    int gop_ = 0;        // 多少帧有一个I帧  影响秒开
+    int bitrate_ = 0;    // 码率  越高，越清晰
+    int gop_ = 0;        // 多少帧有一个I帧  影响秒开；帧率为25，则gop是50
     int pix_fmt_ = 0;    // 像素格式
-    bool annexb_  = false;
+    bool annexb_  = false;  // 默认不带起始码
     int threads_ = 1;
     //    std::string profile_;
     //    std::string level_id_;
@@ -54,7 +54,7 @@ private:
     std::string codec_name_;
     AVCodec *codec_ = nullptr;
     AVCodecContext  *ctx_ = nullptr;
-    AVDictionary *dict_ = nullptr;
+    AVDictionary *dict_ = nullptr;  // 有些参数需要字典去传递
 
     AVFrame *frame_ = nullptr;
 };
