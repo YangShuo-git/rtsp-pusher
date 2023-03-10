@@ -23,6 +23,13 @@ enum RET_CODE
     RET_ERR_EOF
 };
 
+enum MediaType 
+{
+    E_MEDIA_UNKNOWN = -1,
+    E_AUDIO_TYPE,
+    E_VIDEO_TYPE
+};
+
 // Properties就是一个改造后的map，以键值对的形式来存放属性
 class Properties: public std::map<std::string,std::string>
 {
