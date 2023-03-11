@@ -27,14 +27,14 @@ RET_CODE AACEncoder::Init(const Properties &properties)
     codec_ = avcodec_find_encoder(AV_CODEC_ID_AAC);
     if(!codec_) 
     {
-        LogError("AAC: fail to find encoder");
+        LogError("Fail to find audio encoder");
         return RET_ERR_MISMATCH_CODE;
     }
     // 分配编码器上下文
     ctx_ = avcodec_alloc_context3(codec_);
     if(!ctx_) 
     {
-        LogError("AAC: fail to avcodec_alloc_context3");
+        LogError("Fail to avcodec_alloc_context3: audio");
         return RET_ERR_OUTOFMEMORY;
     }
 
@@ -50,7 +50,7 @@ RET_CODE AACEncoder::Init(const Properties &properties)
     // 打开编码器
     if(avcodec_open2(ctx_, codec_, nullptr) < 0) 
     {
-        LogError("AAC: fail to avcodec_open2");
+        LogError("Fail to avcodec_open2: audio");
         avcodec_free_context(&ctx_);
         return RET_FAIL;
     }

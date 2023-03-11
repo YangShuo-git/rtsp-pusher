@@ -43,7 +43,7 @@ int H264Encoder::Init(const Properties &properties)
     // 查找编码器
     if(codec_name_ == "default") 
     {
-        LogInfo("use default encoder");
+        LogInfo("use default video encoder");
         codec_ = avcodec_find_encoder(AV_CODEC_ID_H264);
     } else {
         LogInfo("use %s encoder", codec_name_.c_str());
@@ -51,7 +51,7 @@ int H264Encoder::Init(const Properties &properties)
     }
     if(!codec_) 
     {
-        LogError("Can't find encoder");
+        LogError("Can't find video encoder");
         return RET_FAIL;
     }
 
@@ -59,7 +59,7 @@ int H264Encoder::Init(const Properties &properties)
     ctx_ = avcodec_alloc_context3(codec_);
     if(!ctx_) 
     {
-        LogError("Fail to avcodec_alloc_context3: h264");
+        LogError("Fail to avcodec_alloc_context3: video");
         return RET_FAIL;
     }
 

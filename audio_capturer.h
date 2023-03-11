@@ -12,9 +12,9 @@ class AudioCapturer : public CommonLooper
 public:
     AudioCapturer();
     virtual ~AudioCapturer();
+    virtual void Loop();
 
     RET_CODE Init(const Properties properties);
-    virtual void Loop();
     void AddCallback(function<void(uint8_t*, int32_t)> callback);
 
 private:

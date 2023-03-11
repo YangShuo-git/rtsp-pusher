@@ -9,11 +9,11 @@ using std::function;
 class VideoCapturer: public CommonLooper
 {
 public:
-    VideoCapturer(/* args */);
+    VideoCapturer();
     ~VideoCapturer();
+    virtual void Loop();
 
     RET_CODE Init(const Properties& properties);
-    virtual void Loop();
     void AddCallback(function<void(uint8_t*, int32_t)> callback);
 
 private:

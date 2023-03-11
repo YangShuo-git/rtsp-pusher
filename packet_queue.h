@@ -234,13 +234,13 @@ public:
                     break;    
             }
 
-            if(E_AUDIO_TYPE == media_type) 
+            if(E_AUDIO_TYPE == mypkt->media_type) 
             {
                 stats_.audio_nb_packets--;      
                 stats_.audio_size -= mypkt->pkt->size;
                 audio_front_pts_ = mypkt->pkt->pts;
             }
-            if(E_VIDEO_TYPE == media_type) 
+            if(E_VIDEO_TYPE == mypkt->media_type) 
             {
                 stats_.video_nb_packets--;      
                 stats_.video_size -= mypkt->pkt->size;
