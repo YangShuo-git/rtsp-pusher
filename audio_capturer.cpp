@@ -42,7 +42,7 @@ RET_CODE AudioCapturer::Init(const Properties properties)
     // 打开测试文件，代替物理采集
     if(openPcmFile(input_pcm_name_.c_str()) < 0)
     {
-        LogError("openPcmFile %s failed", input_pcm_name_.c_str());
+        LogError("Fail to openPcmFile %s", input_pcm_name_.c_str());
         return RET_FAIL;
     }
 

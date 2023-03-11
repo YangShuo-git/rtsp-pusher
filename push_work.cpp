@@ -30,6 +30,10 @@ PushWork::~PushWork()
     if(video_encoder_) {
         delete video_encoder_;
     }
+    if (rtsp_pusher_)
+    {
+        delete rtsp_pusher_;
+    }
     LogInfo("~PushWork()");
 }
 
@@ -71,6 +75,10 @@ RET_CODE PushWork::Init(const Properties &properties)
     video_bitrate_ = properties.GetProperty("video_bitrate", 1024*1024);   // 先默认1M fixedme
     video_b_frames_ = properties.GetProperty("video_b_frames", 0); 
 
+    // 获取rtsp配置参数
+    rtsp_url_       = properties.GetProperty("rtsp_url", "");
+    rtsp_transport_ = properties.GetProperty("rtsp_transport", "");
+
     // 初始化publish time
     AVPublishTime::GetInstance()->Rest();   // 推流打时间戳的问题
 
@@ -89,7 +97,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     // 这里的属性没有去设置采样格式  因为采样格式是从new出来的编码器读取出来的
     if(audio_encoder_->Init(aud_codec_properties) != RET_OK)
     {
-        LogError("Fail to AACEncoder Init");
+        LogError("Fail to Init AACEncoder");
         return RET_FAIL;
     }
 
@@ -135,6 +143,39 @@ RET_CODE PushWork::Init(const Properties &properties)
     ret = av_frame_get_buffer(audio_frame_, 0);
     if(ret < 0) {
         LogError("Fail to av_frame_get_buffer ");
+        return RET_FAIL;
+    }
+
+
+    // 配置 RtspPusher （先完成网络连接） 在音视频编码器初始化后，音视频捕获前
+    rtsp_pusher_ =new RtspPusher();
+    if(!rtsp_pusher_) {
+        LogError("Fail to new RTSPPusher()");
+        return RET_FAIL;
+    }
+
+    Properties rtsp_properties;
+    rtsp_properties.SetProperty("url", rtsp_url_);
+    rtsp_properties.SetProperty("rtsp_transport", rtsp_transport_);
+    if(rtsp_pusher_->Init(rtsp_properties) != RET_OK) {
+        LogError("Fail to rtsp_pusher_->Init");
+        return RET_FAIL;
+    }
+    // 创建音频流、音视频流
+    if(video_encoder_) {
+        if(rtsp_pusher_->ConfigVideoStream(video_encoder_->GetCodecContext()) != RET_OK) {
+            LogError("Fail to rtsp_pusher ConfigVideoSteam");
+            return RET_FAIL;
+        }
+    }
+    if(audio_encoder_) {
+        if(rtsp_pusher_->ConfigAudioStream(audio_encoder_->GetCodecContext()) != RET_OK) {
+            LogError("Fail to rtsp_pusher ConfigAudioStream");
+            return RET_FAIL;
+        }
+    }
+    if(rtsp_pusher_->Connect() != RET_OK) {
+        LogError("Fail to rtsp_pusher Connect()");
         return RET_FAIL;
     }
 
@@ -279,7 +320,8 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
     LogInfo("PcmCallback pts:%ld", pts);
     if(packet) {
         LogInfo("PcmCallback packet->pts:%ld", packet->pts);
-        av_packet_free(&packet);
+        // av_packet_free(&packet);
+        rtsp_pusher_->Push(packet, E_AUDIO_TYPE);
     }else
     {
         LogInfo("packet is null");
@@ -316,7 +358,8 @@ void PushWork::YuvCallback(uint8_t *yuv, int32_t size)
     LogInfo("YuvCallback pts:%ld", pts);
     if(packet) {
         LogInfo("YuvCallback packet->pts:%ld", packet->pts);
-        av_packet_free(&packet);
+        // av_packet_free(&packet);
+        rtsp_pusher_->Push(packet, E_VIDEO_TYPE);
     }else {
         LogInfo("packet is null");
     }

@@ -8,7 +8,7 @@ RtspPusher::RtspPusher()
 
 RtspPusher::~RtspPusher()
 {
-
+    DeInit();  // 释放资源
 }
 
 RET_CODE RtspPusher::Init(const Properties &properties)
@@ -56,9 +56,11 @@ RET_CODE RtspPusher::Init(const Properties &properties)
         LogError("Fail to new PacketQueue");
         return RET_ERR_OUTOFMEMORY;
     }
+
+    return RET_OK;
 }
 
-void RtspPusher::DeInit()
+void RtspPusher::DeInit()  // 这个函数重复调用没有问题
 {
     if(queue_) {
         queue_->Abort();
@@ -128,14 +130,14 @@ void RtspPusher::Loop()
             case E_VIDEO_TYPE:
                 ret = sendPacket(pkt, media_type);
                 if(ret < 0) {
-                    LogError("send video Packet failed");
+                    LogError("Fail to send video Packet");
                 }
                 av_packet_free(&pkt);
                 break;
             case E_AUDIO_TYPE:
                 ret = sendPacket(pkt, media_type);
                 if(ret < 0) {
-                    LogError("send audio Packet failed");
+                    LogError("Fail to send audio Packet");
                 }
                 av_packet_free(&pkt);
                 break;
@@ -144,6 +146,16 @@ void RtspPusher::Loop()
             }
         }
     }
+    
+    ret = av_write_trailer(fmt_ctx_);
+    if(ret < 0) {
+        char str_error[512] = {0};
+        av_strerror(ret, str_error, sizeof(str_error) -1);
+        LogError("Fail to av_write_trailer:%s", str_error);
+        return;
+    }
+
+    LogInfo("avformat_write_header ok");
 }
 
 int RtspPusher::sendPacket(AVPacket *pkt, MediaType media_type)
@@ -181,7 +193,7 @@ RET_CODE RtspPusher::ConfigVideoStream(const AVCodecContext *ctx)
         LogError("fmt_ctx is nullptr");
         return RET_FAIL;
     }
-    if(ctx) {
+    if(!ctx) {
         LogError("ctx is nullptr");
         return RET_FAIL;
     }
@@ -208,7 +220,7 @@ RET_CODE RtspPusher::ConfigAudioStream(const AVCodecContext *ctx)
         LogError("fmt_ctx is nullptr");
         return RET_FAIL;
     }
-    if(ctx) {
+    if(!ctx) {
         LogError("ctx is nullptr");
         return RET_FAIL;
     }

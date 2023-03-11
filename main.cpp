@@ -10,11 +10,24 @@ extern "C" {
 #include <libavutil/audio_fifo.h>
 }
 
+// 减少缓冲 ffplay.exe -i rtmp://xxxxxxx -fflags nobuffer
+// 减少码流分析时间 ffplay.exe -i rtmp://xxxxxxx -analyzeduration 1000000 单位为微秒
+// ffplay -i rtsp://192.168.2.132/live/livestream -fflags nobuffer -analyzeduration 1000000 -rtsp_transport udp
+
+#define RTSP_URL "rtsp://192.168.165.87/live/livestream"
+// ffmpeg -re -i  rtsp_test_hd.flv  -vcodec copy -acodec copy  -f flv -y rtsp://111.229.231.225/live/livestream
+// ffmpeg -re -i  rtsp_test_hd.flv  -vcodec copy -acodec copy  -f flv -y rtsp://192.168.1.12/live/livestream
+// ffmpeg -re -i  1920x832_25fps.flv  -vcodec copy -acodec copy  -f flv -y rtsp://111.229.231.225/live/livestream
+
+
 int main()
 {
     init_logger("rtsp_push.log", S_INFO);
 
-    {   // 测试生命周期
+    for (int i = 0; i < 3; i++)
+    {   
+        printf("this is %d time!\n", i);
+        // 测试生命周期
         PushWork push_work;
         Properties properties;
 
@@ -52,6 +65,11 @@ int main()
         // 视频编码属性
         properties.SetProperty("video_bitrate", 512*1024);  // 设置码率
 
+        // 配置rtsp
+        // 1.url   2.udp
+        properties.SetProperty("rtsp_url", RTSP_URL);
+        properties.SetProperty("rtsp_transport", "udp");
+
         // 启动push_work
         if(push_work.Init(properties) != RET_OK) {
             LogError("Fail to init PushWork");
@@ -61,10 +79,13 @@ int main()
         while (true)  // 这里阻塞的时间，就是采集的时间
         { 
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            if(count++ > 5)
+            if(count++ > 3){
+                LogInfo("Main break");
                 break;
+            }
         }
     }
-    LogInfo("main finish");
+
+    LogInfo("Main finish");
     return 0;
 }

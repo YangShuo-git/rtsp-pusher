@@ -54,6 +54,10 @@ public:
     {
         return av_get_bytes_per_sample(ctx_->sample_fmt) * ctx_->channels * ctx_->frame_size;
     }
+    AVCodecContext *GetCodecContext() 
+    {
+        return ctx_;
+    }
 
 //    virtual RET_CODE EncodeInput(const AVFrame *frame);
 //    virtual RET_CODE EncodeOutput(AVPacket *pkt);

@@ -35,6 +35,10 @@ public:
     {
         return pps_.size();
     }
+    AVCodecContext *GetCodecContext() 
+    {
+        return ctx_;
+    }
 
 private:
     int width_ = 0;

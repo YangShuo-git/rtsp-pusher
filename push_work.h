@@ -6,6 +6,7 @@
 #include "video_capturer.h"
 #include "aac_encoder.h"
 #include "h264_encoder.h"
+#include "rtsp_pusher.h"
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -73,6 +74,11 @@ private:
     int video_gop_;
     int video_bitrate_;
     int video_b_frames_;   // b帧数量
+
+    // rtsp 
+    std::string rtsp_url_;
+    std::string rtsp_transport_ = "";
+    RtspPusher *rtsp_pusher_ = nullptr;
 };
 
 #endif // _PUSH_WORK_H_
