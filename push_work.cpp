@@ -43,8 +43,8 @@ RET_CODE PushWork::Init(const Properties &properties)
     
     // 文件模式（代替物理采集）
     audio_test_ = properties.GetProperty("audio_test", 0);
-    input_pcm_name_ = properties.GetProperty("input_pcm_name", "input_48k_2ch_s16.pcm");
     video_test_ = properties.GetProperty("video_test", 0);
+    input_pcm_name_ = properties.GetProperty("input_pcm_name", "input_48k_2ch_s16.pcm");
     input_yuv_name_ = properties.GetProperty("input_yuv_name", "input_1280_720_420p.yuv");
 
     // 麦克风采样属性
@@ -63,8 +63,8 @@ RET_CODE PushWork::Init(const Properties &properties)
 
     // 音频编码参数
     audio_sample_rate_ = properties.GetProperty("audio_sample_rate", mic_sample_rate_);
-    audio_bitrate_ = properties.GetProperty("audio_bitrate", 128*1024);
     audio_channels_ = properties.GetProperty("audio_channels", mic_channels_);
+    audio_bitrate_ = properties.GetProperty("audio_bitrate", 128*1024);
     audio_ch_layout_ = av_get_default_channel_layout(audio_channels_);    // 由audio_channels_决定
 
     // 视频编码属性
@@ -75,12 +75,12 @@ RET_CODE PushWork::Init(const Properties &properties)
     video_bitrate_ = properties.GetProperty("video_bitrate", 1024*1024);   // 先默认1M fixedme
     video_b_frames_ = properties.GetProperty("video_b_frames", 0); 
 
-    // 获取rtsp配置参数
+    // rtsp配置参数
     rtsp_url_       = properties.GetProperty("rtsp_url", "");
     rtsp_transport_ = properties.GetProperty("rtsp_transport", "");
 
     // 初始化publish time
-    AVPublishTime::GetInstance()->Rest();   // 推流打时间戳的问题
+    AVPublishTime::GetInstance()->Rest();  // 推流打时间戳的问题
 
 
     // 设置音频编码器（通过上面采集到的参数来进行设置）
@@ -132,8 +132,8 @@ RET_CODE PushWork::Init(const Properties &properties)
 
     audio_frame_ = av_frame_alloc();
     audio_frame_->format = audio_encoder_->GetFormat();
-    audio_frame_->nb_samples = audio_encoder_->GetFrameSamples();
     audio_frame_->channels = audio_encoder_->GetChannels();
+    audio_frame_->nb_samples = audio_encoder_->GetFrameSamples();
     audio_frame_->channel_layout = audio_encoder_->GetChannelLayout();
     if(fltp_buf_size_ != frame_bytes2) {
         LogError("fltp_buf_size_:%d != frame_bytes2:%d", fltp_buf_size_, frame_bytes2);
@@ -148,7 +148,7 @@ RET_CODE PushWork::Init(const Properties &properties)
 
 
     // 配置 RtspPusher （先完成网络连接） 在音视频编码器初始化后，音视频捕获前
-    rtsp_pusher_ =new RtspPusher();
+    rtsp_pusher_ = new RtspPusher();
     if(!rtsp_pusher_) {
         LogError("Fail to new RTSPPusher()");
         return RET_FAIL;
@@ -334,7 +334,8 @@ void PushWork::YuvCallback(uint8_t *yuv, int32_t size)
     int pkt_frame = 0;
     RET_CODE encode_ret = RET_OK;
     AVPacket *packet = video_encoder_->Encode(yuv, size, pts, &pkt_frame, &encode_ret);
-    if(packet) {
+    if(packet) 
+    {
         if(!h264_fp_) 
         {
             h264_fp_ = fopen("build/push_dump.h264", "wb");
@@ -355,8 +356,10 @@ void PushWork::YuvCallback(uint8_t *yuv, int32_t size)
 
         fflush(h264_fp_);
     }
+    
     LogInfo("YuvCallback pts:%ld", pts);
-    if(packet) {
+    if(packet) 
+    {
         LogInfo("YuvCallback packet->pts:%ld", packet->pts);
         // av_packet_free(&packet);
         rtsp_pusher_->Push(packet, E_VIDEO_TYPE);

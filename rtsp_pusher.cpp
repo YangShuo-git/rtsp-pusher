@@ -93,7 +93,7 @@ RET_CODE RtspPusher::Connect()
     }
 
     // 连接服务器
-    int ret = avformat_write_header(fmt_ctx_, nullptr);
+    int ret = avformat_write_header(fmt_ctx_, NULL);
     if(ret < 0) {
         char str_error[512] = {0};
         av_strerror(ret, str_error, sizeof(str_error) -1);
