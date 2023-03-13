@@ -63,6 +63,7 @@ int H264Encoder::Init(const Properties &properties)
         return RET_FAIL;
     }
 
+    // 给编码器配置参数（使用的是之前设置的参数）
     ctx_->width  = width_;
     ctx_->height = height_;
     ctx_->bit_rate = bitrate_;

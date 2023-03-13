@@ -1,5 +1,6 @@
 #include "rtsp_pusher.h"
 #include "log.h"
+#include "times_util.h"
 
 RtspPusher::RtspPusher()
 {
@@ -11,10 +12,24 @@ RtspPusher::~RtspPusher()
     DeInit();  // 释放资源
 }
 
+// false:继续阻塞;  true:退出阻塞
+static int decode_interrupt_cb(void *ctx)
+{
+    RtspPusher *rtsp_puser = (RtspPusher *)ctx;
+    if(rtsp_puser->IsTimeout()) {
+        LogWarn("timeout:%dms", rtsp_puser->GetTimeout());
+        return 1;
+    }
+    LogInfo("block time:%lld", rtsp_puser->GetBlockTime());
+    return 0;
+}
+
+
 RET_CODE RtspPusher::Init(const Properties &properties)
 {
     url_ = properties.GetProperty("url", "");
     rtsp_transport_ = properties.GetProperty("rtsp_transport", "");
+    timeout_ = properties.GetProperty("timeout", 5000);    // 默认为5秒
     audio_frame_duration_ = properties.GetProperty("audio_frame_duration", 0); 
     video_frame_duration_ = properties.GetProperty("video_frame_duration", 0);
 
@@ -49,6 +64,10 @@ RET_CODE RtspPusher::Init(const Properties &properties)
         LogError("Fail to av_opt_set:%s", str_error);
         return RET_FAIL;
     }
+
+    // 设置超时回调
+    fmt_ctx_->interrupt_callback.callback = decode_interrupt_cb;    
+    fmt_ctx_->interrupt_callback.opaque = this;
 
     // 创建队列
     queue_ = new PacketQueue(audio_frame_duration_, video_frame_duration_);
@@ -91,6 +110,8 @@ RET_CODE RtspPusher::Connect()
     if(!audio_stream_ && !video_stream_) {
         return RET_FAIL;
     }
+
+    RestTiemout();
 
     // 连接服务器
     int ret = avformat_write_header(fmt_ctx_, NULL);
@@ -147,6 +168,8 @@ void RtspPusher::Loop()
         }
     }
     
+    RestTiemout();
+
     ret = av_write_trailer(fmt_ctx_);
     if(ret < 0) {
         char str_error[512] = {0};
@@ -176,6 +199,8 @@ int RtspPusher::sendPacket(AVPacket *pkt, MediaType media_type)
 
     pkt->pts = av_rescale_q(pkt->pts, src_time_base, dst_time_base);
     pkt->duration = 0;
+
+    RestTiemout();
 
     int ret = av_write_frame(fmt_ctx_, pkt);
     if(ret < 0) {
@@ -241,3 +266,25 @@ RET_CODE RtspPusher::ConfigAudioStream(const AVCodecContext *ctx)
     return RET_OK;
 }
 
+bool RtspPusher::IsTimeout()
+{
+    if(TimesUtil::GetTimeMillisecond() - pre_time_ > timeout_) {
+        return true;    // 超时
+    }
+    return false;
+}
+
+void RtspPusher::RestTiemout()
+{
+    pre_time_ = TimesUtil::GetTimeMillisecond();        // 重置为当前时间
+}
+
+int RtspPusher::GetTimeout()
+{
+    return timeout_;
+}
+
+int64_t RtspPusher::GetBlockTime()
+{
+    return TimesUtil::GetTimeMillisecond() - pre_time_;
+}

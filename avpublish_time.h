@@ -15,10 +15,11 @@
 class AVPublishTime
 {
 public:
-    typedef enum PTS_STRATEGY {
+    enum PTS_STRATEGY {
         PTS_RECTIFY = 0,        // 默认类型，pts的间隔尽量保持帧间隔
         PTS_REAL_TIME           // 实时pts
-    }PTS_STRATEGY;
+    };
+    
 public:
     static AVPublishTime* GetInstance() {
         if ( s_publish_time == nullptr )
@@ -184,7 +185,7 @@ private:
     uint32_t video_frame_threshold_ = (uint32_t)(video_frame_duration_ /2);
     double video_pre_pts_ = 0;
 
-    static AVPublishTime * s_publish_time;
+    static AVPublishTime *s_publish_time;
 };
 
 

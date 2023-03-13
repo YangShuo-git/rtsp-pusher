@@ -66,9 +66,9 @@ int main()
         properties.SetProperty("video_bitrate", 512*1024);  // 设置码率
 
         // 配置rtsp
-        // 1.url   2.udp
         properties.SetProperty("rtsp_url", RTSP_URL);
         properties.SetProperty("rtsp_transport", "udp");
+        properties.SetProperty("rtsp_timeout", 3000);  // 超时时间 3s
 
         // 启动push_work
         if(push_work.Init(properties) != RET_OK) {
@@ -81,7 +81,7 @@ int main()
         while (true)  // 这里阻塞的时间，就是采集的时间
         { 
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            if(count++ > 4){
+            if(count++ > 100){
                 LogInfo("Main break");
                 break;
             }

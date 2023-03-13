@@ -67,7 +67,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     audio_bitrate_ = properties.GetProperty("audio_bitrate", 128*1024);
     audio_ch_layout_ = av_get_default_channel_layout(audio_channels_);    // 由audio_channels_决定
 
-    // 视频编码属性
+    // 视频编码参数
     video_width_  = properties.GetProperty("video_width", desktop_width_); 
     video_height_ = properties.GetProperty("video_height", desktop_height_); 
     video_fps_ = properties.GetProperty("video_fps", desktop_fps_);             
@@ -75,9 +75,10 @@ RET_CODE PushWork::Init(const Properties &properties)
     video_bitrate_ = properties.GetProperty("video_bitrate", 1024*1024);   // 先默认1M fixedme
     video_b_frames_ = properties.GetProperty("video_b_frames", 0); 
 
-    // rtsp配置参数
+    // rtsp参数配置
     rtsp_url_       = properties.GetProperty("rtsp_url", "");
     rtsp_transport_ = properties.GetProperty("rtsp_transport", "");
+    rtsp_timeout_ = properties.GetProperty("rtsp_timeout", 5000);   // 超时时间
 
     // 初始化publish time
     AVPublishTime::GetInstance()->Rest();  // 推流打时间戳的问题
@@ -85,12 +86,11 @@ RET_CODE PushWork::Init(const Properties &properties)
 
     // 设置音频编码器（通过上面采集到的参数来进行设置）
     audio_encoder_ = new AACEncoder();
-    if(!audio_encoder_)
-    {
+    if(!audio_encoder_){
         LogError("Fail to new AACEncoder");
         return RET_FAIL;
     }
-    Properties  aud_codec_properties;
+    Properties aud_codec_properties;
     aud_codec_properties.SetProperty("sample_rate", audio_sample_rate_);
     aud_codec_properties.SetProperty("channels", audio_channels_);
     aud_codec_properties.SetProperty("bitrate", audio_bitrate_);
@@ -110,17 +110,15 @@ RET_CODE PushWork::Init(const Properties &properties)
     vid_codec_properties.SetProperty("b_frames", video_b_frames_);
     vid_codec_properties.SetProperty("bitrate", video_bitrate_); 
     vid_codec_properties.SetProperty("gop", video_gop_);
-    if(video_encoder_->Init(vid_codec_properties) != RET_OK)
-    {
+    if(video_encoder_->Init(vid_codec_properties) != RET_OK){
         LogError("Fail to Init H264Encoder");
         return RET_FAIL;
     }
 
 
-    // 音频重采样 默认读取出来的数据是s16的，编码器需要的是fltp,
-    // 手动把s16转成fltp
-    int frame_bytes2 = 0;
-    frame_bytes2 = audio_encoder_->GetFrameBytes(); // s16格式 一帧的字节数
+    // 音频重采样 默认读取出来的数据是s16的，编码器需要的是fltp；这里是手动把s16转成fltp，且两者每帧的字节数要保持一致
+    int frame_bytes = 0;
+    frame_bytes = audio_encoder_->GetFrameBytes(); // s16格式 一帧的字节数
     fltp_buf_size_ = av_samples_get_buffer_size(NULL, audio_encoder_->GetChannels(),  
                                               audio_encoder_->GetFrameSamples(),
                                               (enum AVSampleFormat)audio_encoder_->GetFormat(), 1);  // fltp格式 一帧的字节数
@@ -135,8 +133,8 @@ RET_CODE PushWork::Init(const Properties &properties)
     audio_frame_->channels = audio_encoder_->GetChannels();
     audio_frame_->nb_samples = audio_encoder_->GetFrameSamples();
     audio_frame_->channel_layout = audio_encoder_->GetChannelLayout();
-    if(fltp_buf_size_ != frame_bytes2) {
-        LogError("fltp_buf_size_:%d != frame_bytes2:%d", fltp_buf_size_, frame_bytes2);
+    if(fltp_buf_size_ != frame_bytes) {
+        LogError("fltp_buf_size_:%d != frame_bytes:%d", fltp_buf_size_, frame_bytes);
         return RET_FAIL;
     }
 
@@ -147,7 +145,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     }
 
 
-    // 配置 RtspPusher （先完成网络连接） 在音视频编码器初始化后，音视频捕获前
+    // 设置 Rtsp Pusher （即完成网络连接） 在音视频编码器初始化后，音视频捕获前
     rtsp_pusher_ = new RtspPusher();
     if(!rtsp_pusher_) {
         LogError("Fail to new RTSPPusher()");
@@ -157,6 +155,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     Properties rtsp_properties;
     rtsp_properties.SetProperty("url", rtsp_url_);
     rtsp_properties.SetProperty("rtsp_transport", rtsp_transport_);
+    rtsp_properties.SetProperty("timeout", rtsp_timeout_);
     if(rtsp_pusher_->Init(rtsp_properties) != RET_OK) {
         LogError("Fail to rtsp_pusher_->Init");
         return RET_FAIL;
@@ -190,7 +189,6 @@ RET_CODE PushWork::Init(const Properties &properties)
     aud_cap_properties.SetProperty("channels", mic_channels_);
     aud_cap_properties.SetProperty("nb_samples", 1024);     // 由编码器提供
     aud_cap_properties.SetProperty("byte_per_sample", 2);    
-
     if(audio_capturer_->Init(aud_cap_properties) != RET_OK)
     {
         LogError("Fail to Init AudioCapturer");
@@ -212,7 +210,6 @@ RET_CODE PushWork::Init(const Properties &properties)
     vid_cap_properties.SetProperty("input_yuv_name", input_yuv_name_);
     vid_cap_properties.SetProperty("width", desktop_width_);
     vid_cap_properties.SetProperty("height", desktop_height_);
-
     if(video_capturer_->Init(vid_cap_properties) != RET_OK)
     {
         LogError("Fail to Init VideoCapturer");
@@ -269,6 +266,7 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
         fwrite(pcm, 1, size, pcm_s16le_fp_);
         fflush(pcm_s16le_fp_);
     }
+
     // 这里就约定好，音频捕获的时候，一帧的采样点和编码器需要的点数是一样的
     s16le_convert_to_fltp((short *)pcm, (float *)fltp_buf_, audio_frame_->nb_samples);
     ret = av_frame_make_writable(audio_frame_);
@@ -320,7 +318,7 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
     LogInfo("PcmCallback pts:%ld", pts);
     if(packet) {
         LogInfo("PcmCallback packet->pts:%ld", packet->pts);
-        // av_packet_free(&packet);
+        // av_packet_free(&packet);  要送去push，所以不能free了
         rtsp_pusher_->Push(packet, E_AUDIO_TYPE);
     }else
     {
@@ -352,11 +350,11 @@ void PushWork::YuvCallback(uint8_t *yuv, int32_t size)
             fwrite(video_encoder_->get_pps_data(), 1, video_encoder_->get_pps_size(), h264_fp_);
         }
 
-        fwrite(packet->data, 1,  packet->size, h264_fp_);
+        fwrite(packet->data, 1, packet->size, h264_fp_);
 
         fflush(h264_fp_);
     }
-    
+
     LogInfo("YuvCallback pts:%ld", pts);
     if(packet) 
     {

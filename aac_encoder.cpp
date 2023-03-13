@@ -38,7 +38,7 @@ RET_CODE AACEncoder::Init(const Properties &properties)
         return RET_ERR_OUTOFMEMORY;
     }
 
-    // 设置参数
+    // 给编码器配置参数（使用的是之前设置的参数）
     ctx_->sample_rate   = sample_rate_;
     ctx_->sample_fmt    = AV_SAMPLE_FMT_FLTP;  // 这里默认是aac编码：planar格式PCM， 如果是fdk-aac，会不一样
     ctx_->channels      = channels_;

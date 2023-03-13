@@ -76,9 +76,10 @@ private:
     int video_b_frames_;   // b帧数量
 
     // rtsp 
+    RtspPusher *rtsp_pusher_ = nullptr;
     std::string rtsp_url_;
     std::string rtsp_transport_ = "";
-    RtspPusher *rtsp_pusher_ = nullptr;
+    int rtsp_timeout_ = 5000;  // 超时时间，默认5s
 };
 
 #endif // _PUSH_WORK_H_

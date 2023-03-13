@@ -30,6 +30,11 @@ public:
     // 如果有音频
     RET_CODE ConfigAudioStream(const AVCodecContext *ctx);
 
+    bool IsTimeout();
+    void RestTiemout();
+    int GetTimeout();
+    int64_t GetBlockTime();
+
 private:
     int sendPacket(AVPacket *pkt, MediaType media_type);
 
@@ -52,6 +57,10 @@ private:
     double audio_frame_duration_ = 23.21995649; // 默认23.2ms 44.1khz  1024*1000ms/44100=23.21995649ms
     double video_frame_duration_ = 40;          // 默认40ms 视频帧率为25的  ， 1000ms/25=40ms
     PacketQueue *queue_ = nullptr;
+
+    // 处理超时
+    int timeout_;
+    int64_t pre_time_ = 0;  // 记录调用ffmpeg api之前的时间
 };
 
 
