@@ -2,7 +2,7 @@
 #include "log.h"
 #include "times_util.h"
 
-RtspPusher::RtspPusher()
+RtspPusher::RtspPusher(MessageQueue *msg_queue)
 {
     LogInfo("RtspPusher create");
 }
@@ -20,7 +20,7 @@ static int decode_interrupt_cb(void *ctx)
         LogWarn("timeout:%dms", rtsp_puser->GetTimeout());
         return 1;
     }
-    LogInfo("block time:%lld", rtsp_puser->GetBlockTime());
+    // LogInfo("block time:%lld", rtsp_puser->GetBlockTime());
     return 0;
 }
 
@@ -29,10 +29,10 @@ RET_CODE RtspPusher::Init(const Properties &properties)
 {
     url_ = properties.GetProperty("url", "");
     rtsp_transport_ = properties.GetProperty("rtsp_transport", "");
-    timeout_ = properties.GetProperty("timeout", 5000);    // 默认为5秒
+    timeout_ = properties.GetProperty("timeout", 5000);
     audio_frame_duration_ = properties.GetProperty("audio_frame_duration", 0); 
     video_frame_duration_ = properties.GetProperty("video_frame_duration", 0);
-
+    max_queue_duration_ = properties.GetProperty("max_queue_duration", 500);
     if(url_ == "") {
         LogError("url is nullptr");
         return RET_FAIL;
@@ -65,7 +65,7 @@ RET_CODE RtspPusher::Init(const Properties &properties)
         return RET_FAIL;
     }
 
-    // 设置超时回调
+    // 设置超时回调（利用ffmpeg的参数）
     fmt_ctx_->interrupt_callback.callback = decode_interrupt_cb;    
     fmt_ctx_->interrupt_callback.opaque = this;
 
@@ -114,7 +114,7 @@ RET_CODE RtspPusher::Connect()
     RestTiemout();
 
     // 连接服务器
-    int ret = avformat_write_header(fmt_ctx_, NULL);
+    int ret = avformat_write_header(fmt_ctx_, nullptr);
     if(ret < 0) {
         char str_error[512] = {0};
         av_strerror(ret, str_error, sizeof(str_error) -1);
@@ -123,7 +123,7 @@ RET_CODE RtspPusher::Connect()
     }
     LogInfo("avformat_write_header ok");
 
-    // 启动线程
+    // 启动推流线程
     return Start();     
 }
 
@@ -140,8 +140,11 @@ void RtspPusher::Loop()
             LogInfo("abort request");
             break;
         }
+
+        debugQueue(debug_interval_);
+        checkPacketQueueDuration(); // 可以每隔一秒check一次
         ret = queue_->PopWithTimeout(&pkt, media_type, 2000);
-        if(0 == ret) {
+        if(1 == ret) {  // 读取到消息
             if(request_abort_) {
                 LogInfo("abort request");
                 av_packet_free(&pkt);
@@ -204,6 +207,7 @@ int RtspPusher::sendPacket(AVPacket *pkt, MediaType media_type)
 
     int ret = av_write_frame(fmt_ctx_, pkt);
     if(ret < 0) {
+        msg_queue_->notify_msg2(MSG_RTSP_ERROR, ret);
         char str_error[512] = {0};
         av_strerror(ret, str_error, sizeof(str_error) -1);
         LogError("Fail to av_write_frame :%s", str_error);
@@ -287,4 +291,29 @@ int RtspPusher::GetTimeout()
 int64_t RtspPusher::GetBlockTime()
 {
     return TimesUtil::GetTimeMillisecond() - pre_time_;
+}
+
+void RtspPusher::debugQueue(int64_t interval)
+{
+    int64_t cur_time = TimesUtil::GetTimeMillisecond();
+    if(cur_time - pre_debug_time_ > interval) {
+        // 打印信息
+        PacketQueueStats stats;
+        queue_->GetStats(&stats);
+        LogInfo("duration:a-%lldms, v-%lldms", stats.audio_duration, stats.video_duration);
+        pre_debug_time_ = cur_time;
+    }
+}
+
+void RtspPusher::checkPacketQueueDuration()
+{
+    PacketQueueStats stats;
+    queue_->GetStats(&stats);
+    if(stats.audio_duration > max_queue_duration_ || stats.video_duration > max_queue_duration_) 
+    {
+        msg_queue_->notify_msg3(MSG_RTSP_QUEUE_DURATION, stats.audio_duration, stats.video_duration);
+        LogWarn("drop packet -> a:%lld, v:%lld, th:%d", stats.audio_duration, stats.video_duration,
+                max_queue_duration_);
+        queue_->Drop(false, max_queue_duration_);
+    }
 }

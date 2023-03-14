@@ -1,6 +1,7 @@
 #include <iostream>
 #include "log.h"
 #include "push_work.h"
+#include "msg_queue.h"
 using namespace std;
 
 extern "C" {
@@ -14,7 +15,7 @@ extern "C" {
 // 减少码流分析时间 ffplay.exe -i rtmp://xxxxxxx -analyzeduration 1000000 单位为微秒
 // ffplay -i rtsp://192.168.2.132/live/livestream -fflags nobuffer -analyzeduration 1000000 -rtsp_transport udp
 
-#define RTSP_URL "rtsp://192.168.165.191/live/livestream"  // ubuntu IP 桥接模式
+#define RTSP_URL "rtsp://192.168.183.191/live/livestream"  // ubuntu IP 桥接模式
 // ffmpeg -re -i  rtsp_test_hd.flv  -vcodec copy -acodec copy  -f flv -y rtsp://111.229.231.225/live/livestream
 // ffmpeg -re -i  rtsp_test_hd.flv  -vcodec copy -acodec copy  -f flv -y rtsp://192.168.1.12/live/livestream
 // ffmpeg -re -i  1920x832_25fps.flv  -vcodec copy -acodec copy  -f flv -y rtsp://111.229.231.225/live/livestream
@@ -23,12 +24,17 @@ extern "C" {
 int main()
 {
     init_logger("rtsp_push.log", S_INFO);
+    MessageQueue *msg_queue = new MessageQueue();
 
     // for (int i = 0; i < 3; i++)
     {   
         // printf("this is %d time!\n", i);
         // 测试生命周期
-        PushWork push_work;
+        if(!msg_queue) {
+            LogError("new MessageQueue() failed");
+            return -1;
+        }
+        PushWork push_work(msg_queue);
         Properties properties;
 
         // 音频test模式
@@ -69,6 +75,7 @@ int main()
         properties.SetProperty("rtsp_url", RTSP_URL);
         properties.SetProperty("rtsp_transport", "udp");
         properties.SetProperty("rtsp_timeout", 3000);  // 超时时间 3s
+        properties.SetProperty("rtsp_max_queue_duration", 1000);
 
         // 启动push_work
         if(push_work.Init(properties) != RET_OK) {
@@ -77,17 +84,33 @@ int main()
         }
 
         // 设置采集的时间
+        int ret = 0;
         int count = 0;
+        AVMessage msg;
         while (true)  // 这里阻塞的时间，就是采集的时间
         { 
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            if(count++ > 100){
-                LogInfo("Main break");
+            // ret = msg_queue->msg_queue_get(&msg, 1000);
+            // if(1 == ret) {
+            //     switch (msg.what) {
+            //     case MSG_RTSP_ERROR:
+            //         LogError("MSG_RTSP_ERROR error:%d", msg.arg1);
+            //         break;
+            //     case MSG_RTSP_QUEUE_DURATION:
+            //         LogError("MSG_RTSP_QUEUE_DURATION a:%d, v:%d", msg.arg1, msg.arg2);
+            //         break;
+            //     default:
+            //         break;
+            //     }
+            // }
+            if(count++ > 1000){
+                LogInfo("Main break\n");
                 break;
             }
         }
+        delete msg_queue;
     }
 
-    LogInfo("Main finish");
+    LogInfo("Main finish\n");
     return 0;
 }

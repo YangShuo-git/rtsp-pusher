@@ -102,7 +102,7 @@ public:
         return 0;
     }
 
-    // 取出packet，并取出对应的类型
+    // 取出packet，并取出对应的类型；返回值: -1 abort; 1 获取到消息
     int Pop(AVPacket **pkt, MediaType &media_type)
     {
         if(!pkt) 
@@ -150,34 +150,33 @@ public:
         queue_.pop();
         free(mypkt);
 
-        return 0;
+        return 1;
     }
     
-    // 带超时时间的pop
+    // 带超时时间的pop；-1 abort，0 没有消息，1 有消息
     int PopWithTimeout(AVPacket **pkt, MediaType &media_type, int timeout)
     {
-        if(timeout < 0) 
-        {
+        if(timeout < 0) {
             return Pop(pkt, media_type);
         }
 
         std::unique_lock<std::mutex> lock(mutex_);
-        if(abort_request_) 
-        {
+        if(abort_request_) {
             LogWarn("abort request");
             return -1;
         }
-        if(queue_.empty())   // 等待唤醒
-        {       
+        if(queue_.empty()) {   // 等待唤醒  
             // return如果返回false，继续wait, 如果返回true退出wait
             cond_.wait_for(lock, std::chrono::milliseconds(timeout), [this] {
                 return !queue_.empty() | abort_request_;
             });
         }
-        if(abort_request_) 
-        {
+        if(abort_request_) {
             LogWarn("abort request");
             return -1;
+        }
+        if(queue_.empty()) {
+            return 0;
         }
 
         MyAVPacket *mypkt = queue_.front();  //只是读取队列首部元素，这里还没有真正出队列
@@ -197,7 +196,7 @@ public:
 
         queue_.pop();
         free(mypkt);
-        return 0;
+        return 1;
     }
     
     bool Empty()

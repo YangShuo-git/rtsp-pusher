@@ -3,7 +3,7 @@
 #include "push_work.h"
 #include "avpublish_time.h"
 
-PushWork::PushWork()
+PushWork::PushWork(MessageQueue *msg_queue)
 {
 
 }
@@ -78,13 +78,14 @@ RET_CODE PushWork::Init(const Properties &properties)
     // rtsp参数配置
     rtsp_url_       = properties.GetProperty("rtsp_url", "");
     rtsp_transport_ = properties.GetProperty("rtsp_transport", "");
-    rtsp_timeout_ = properties.GetProperty("rtsp_timeout", 5000);   // 超时时间
+    rtsp_timeout_ = properties.GetProperty("rtsp_timeout", 5000);
+    rtsp_max_queue_duration_ = properties.GetProperty("rtsp_max_queue_duration", 500);
 
     // 初始化publish time
     AVPublishTime::GetInstance()->Rest();  // 推流打时间戳的问题
 
 
-    // 设置音频编码器（通过上面采集到的参数来进行设置）
+    // 设置音频编码器（通过上面获取到的参数来进行设置）
     audio_encoder_ = new AACEncoder();
     if(!audio_encoder_){
         LogError("Fail to new AACEncoder");
@@ -116,7 +117,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     }
 
 
-    // 音频重采样 默认读取出来的数据是s16的，编码器需要的是fltp；这里是手动把s16转成fltp，且两者每帧的字节数要保持一致
+    // 音频重采样准备 默认读取出来的数据是s16的，编码器需要的是fltp；这里是手动把s16转成fltp，且两者每帧的字节数要保持一致
     int frame_bytes = 0;
     frame_bytes = audio_encoder_->GetFrameBytes(); // s16格式 一帧的字节数
     fltp_buf_size_ = av_samples_get_buffer_size(NULL, audio_encoder_->GetChannels(),  
@@ -145,8 +146,8 @@ RET_CODE PushWork::Init(const Properties &properties)
     }
 
 
-    // 设置 Rtsp Pusher （即完成网络连接） 在音视频编码器初始化后，音视频捕获前
-    rtsp_pusher_ = new RtspPusher();
+    // 设置 Rtsp Pusher（即网络连接） 在音视频编码器初始化后，音视频捕获前
+    rtsp_pusher_ = new RtspPusher(msg_queue_);
     if(!rtsp_pusher_) {
         LogError("Fail to new RTSPPusher()");
         return RET_FAIL;
@@ -156,11 +157,12 @@ RET_CODE PushWork::Init(const Properties &properties)
     rtsp_properties.SetProperty("url", rtsp_url_);
     rtsp_properties.SetProperty("rtsp_transport", rtsp_transport_);
     rtsp_properties.SetProperty("timeout", rtsp_timeout_);
+    rtsp_properties.SetProperty("max_queue_duration", rtsp_max_queue_duration_);
     if(rtsp_pusher_->Init(rtsp_properties) != RET_OK) {
         LogError("Fail to rtsp_pusher_->Init");
         return RET_FAIL;
     }
-    // 创建音频流、音视频流
+    // 创建视频流、音频流
     if(video_encoder_) {
         if(rtsp_pusher_->ConfigVideoStream(video_encoder_->GetCodecContext()) != RET_OK) {
             LogError("Fail to rtsp_pusher ConfigVideoSteam");
@@ -173,6 +175,7 @@ RET_CODE PushWork::Init(const Properties &properties)
             return RET_FAIL;
         }
     }
+    // 网络连接
     if(rtsp_pusher_->Connect() != RET_OK) {
         LogError("Fail to rtsp_pusher Connect()");
         return RET_FAIL;

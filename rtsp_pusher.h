@@ -4,6 +4,7 @@
 #include "media_base.h"
 #include "common_looper.h"
 #include "packet_queue.h"
+#include "msg_queue.h"
 
 extern "C" {
 #include "libavformat/avformat.h"
@@ -15,7 +16,7 @@ extern "C" {
 class RtspPusher: public CommonLooper
 {
 public:
-    RtspPusher();
+    RtspPusher(MessageQueue *msg_queue);
     virtual ~RtspPusher();
     virtual void Loop();
 
@@ -36,6 +37,13 @@ public:
     int64_t GetBlockTime();
 
 private:
+    int64_t pre_debug_time_ = 0;
+    int64_t debug_interval_ = 2000;
+    // 按时间间隔打印packetqueue的状况
+    void debugQueue(int64_t interval);  
+    // 监测队列的缓存情况
+    void checkPacketQueueDuration();
+
     int sendPacket(AVPacket *pkt, MediaType media_type);
 
     // 整个输出流的上下文
@@ -57,10 +65,13 @@ private:
     double audio_frame_duration_ = 23.21995649; // 默认23.2ms 44.1khz  1024*1000ms/44100=23.21995649ms
     double video_frame_duration_ = 40;          // 默认40ms 视频帧率为25的  ， 1000ms/25=40ms
     PacketQueue *queue_ = nullptr;
+    int max_queue_duration_ = 500;  // 队列最大限制时长, 默认500ms
 
     // 处理超时
     int timeout_;
     int64_t pre_time_ = 0;  // 记录调用ffmpeg api之前的时间
+
+    MessageQueue *msg_queue_ = nullptr;
 };
 
 
