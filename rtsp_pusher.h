@@ -23,7 +23,7 @@ public:
     RET_CODE Init(const Properties& properties);
     void DeInit();
     RET_CODE Push(AVPacket *pkt, MediaType media_type);
-    // 连接服务器，如果连接成功则启动线程
+    // 连接服务器，如果连接成功则启动推流线程
     RET_CODE Connect();
 
     // 如果有视频

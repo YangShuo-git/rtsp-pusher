@@ -31,7 +31,7 @@ int main()
         // printf("this is %d time!\n", i);
         // 测试生命周期
         if(!msg_queue) {
-            LogError("new MessageQueue() failed");
+            LogError("Fail to new MessageQueue()");
             return -1;
         }
         PushWork push_work(msg_queue);
@@ -89,28 +89,29 @@ int main()
         AVMessage msg;
         while (true)  // 这里阻塞的时间，就是采集的时间
         { 
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            // ret = msg_queue->msg_queue_get(&msg, 1000);
-            // if(1 == ret) {
-            //     switch (msg.what) {
-            //     case MSG_RTSP_ERROR:
-            //         LogError("MSG_RTSP_ERROR error:%d", msg.arg1);
-            //         break;
-            //     case MSG_RTSP_QUEUE_DURATION:
-            //         LogError("MSG_RTSP_QUEUE_DURATION a:%d, v:%d", msg.arg1, msg.arg2);
-            //         break;
-            //     default:
-            //         break;
-            //     }
-            // }
-            if(count++ > 1000){
+            // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            ret = msg_queue->msg_queue_get(&msg, 1000);
+            if(1 == ret) {
+                switch (msg.what) {
+                case MSG_RTSP_ERROR:
+                    LogError("MSG_RTSP_ERROR error:%d", msg.arg1);
+                    break;
+                case MSG_RTSP_QUEUE_DURATION:
+                    LogError("MSG_RTSP_QUEUE_DURATION a:%d, v:%d", msg.arg1, msg.arg2);
+                    break;
+                default:
+                    break;
+                }
+            }
+            if(count++ > 100){
                 LogInfo("Main break\n");
                 break;
             }
         }
-        delete msg_queue;
+        msg_queue->msg_queue_abort();
     }
-
+    delete msg_queue;
+    
     LogInfo("Main finish\n");
     return 0;
 }

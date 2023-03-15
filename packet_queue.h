@@ -91,12 +91,22 @@ public:
             stats_.audio_size += pkt->size;
             // 持续时长的统计方法，不是用pkt->duration
             audio_back_pts_ = pkt->pts;
+            if (audio_first_packet)
+            {
+                audio_first_packet = 0;
+                audio_front_pts_ = pkt->pts;
+            }
         }
         if(E_VIDEO_TYPE == media_type) 
         {
             stats_.video_nb_packets++; 
             stats_.video_size += pkt->size;
             video_back_pts_ = pkt->pts;
+            if (video_first_packet)
+            {
+                video_first_packet = 0;
+                video_front_pts_ = pkt->pts;
+            }  
         }
         queue_.push(mypkt);  // 一定要push
         return 0;
@@ -264,7 +274,10 @@ public:
         if(duration < 0 || duration > audio_frame_duration_ * stats_.audio_nb_packets * 2)  // 如果duration异常
         {
             duration =  audio_frame_duration_ * stats_.audio_nb_packets;
+        } else {
+            duration += audio_frame_duration_;
         }
+        
         return duration;
     }
 
@@ -307,12 +320,17 @@ public:
         // 也参考帧（包）持续 *帧(包)数
         if(audio_duration < 0 || audio_duration > audio_frame_duration_ * stats_.audio_nb_packets * 2) {
             audio_duration =  audio_frame_duration_ * stats_.audio_nb_packets;
+        } else {
+            audio_duration += audio_frame_duration_;
         }
+        
 
         int64_t video_duration = video_back_pts_ - video_front_pts_;  //以pts为准
         // 也参考帧（包）持续 *帧(包)数
         if(video_duration < 0 || video_duration > video_frame_duration_ * stats_.video_nb_packets * 2) {
             video_duration =  video_frame_duration_ * stats_.video_nb_packets;
+        } else {
+            video_duration += video_frame_duration_;
         }
 
         stats->audio_duration = audio_duration;
@@ -342,6 +360,9 @@ private:
     int64_t audio_back_pts_ = 0;
     int64_t video_front_pts_ = 0;
     int64_t video_back_pts_ = 0;
+
+    int audio_first_packet = 1;
+    int video_first_packet = 1;
 };
 
 #endif // _PACKET_QUEUE_H_

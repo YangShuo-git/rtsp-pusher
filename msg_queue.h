@@ -63,8 +63,8 @@ public:
         }
         int ret;
         AVMessage *msg1;
+        
         std::unique_lock<std::mutex> lock(mutex_);
-
         for(;;) 
         {
             if(abort_request_) {

@@ -19,6 +19,10 @@ public:
     // 若*pkt_frame = 1, 表示send_frame报错；若*pkt_frame = 0，表示receive_packet报错;
     virtual AVPacket *Encode(uint8_t *yuv, int size, int64_t pts, int *pkt_frame, RET_CODE *ret);
 
+    inline int GetFps()
+    {
+        return fps_;
+    }
     inline uint8_t *get_sps_data()
     {
         return (uint8_t *)sps_.c_str();

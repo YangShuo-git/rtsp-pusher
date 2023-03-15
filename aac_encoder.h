@@ -32,6 +32,10 @@ public:
 
     RET_CODE GetAdtsHeader(uint8_t *adts_header, int aac_length);
 
+    virtual int GetSampleRate() 
+    {
+        return ctx_->sample_rate;
+    }
     virtual int GetFormat() 
     {
         return ctx_->sample_fmt;

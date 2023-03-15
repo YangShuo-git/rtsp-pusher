@@ -2,7 +2,7 @@
 #include "log.h"
 #include "times_util.h"
 
-RtspPusher::RtspPusher(MessageQueue *msg_queue)
+RtspPusher::RtspPusher(MessageQueue *msg_queue):msg_queue_(msg_queue)
 {
     LogInfo("RtspPusher create");
 }
@@ -65,11 +65,11 @@ RET_CODE RtspPusher::Init(const Properties &properties)
         return RET_FAIL;
     }
 
-    // 设置超时回调（利用ffmpeg的参数）
+    // 设置rtsp连接超时回调（利用ffmpeg的参数）
     fmt_ctx_->interrupt_callback.callback = decode_interrupt_cb;    
     fmt_ctx_->interrupt_callback.opaque = this;
 
-    // 创建队列
+    // 创建packet队列
     queue_ = new PacketQueue(audio_frame_duration_, video_frame_duration_);
     if(!queue_) {
         LogError("Fail to new PacketQueue");
@@ -110,9 +110,9 @@ RET_CODE RtspPusher::Connect()
     if(!audio_stream_ && !video_stream_) {
         return RET_FAIL;
     }
+    LogInfo("connect to:%s", url_.c_str());
 
     RestTiemout();
-
     // 连接服务器
     int ret = avformat_write_header(fmt_ctx_, nullptr);
     if(ret < 0) {
@@ -143,7 +143,7 @@ void RtspPusher::Loop()
 
         debugQueue(debug_interval_);
         checkPacketQueueDuration(); // 可以每隔一秒check一次
-        ret = queue_->PopWithTimeout(&pkt, media_type, 2000);
+        ret = queue_->PopWithTimeout(&pkt, media_type, 1000);
         if(1 == ret) {  // 读取到消息
             if(request_abort_) {
                 LogInfo("abort request");
@@ -172,7 +172,6 @@ void RtspPusher::Loop()
     }
     
     RestTiemout();
-
     ret = av_write_trailer(fmt_ctx_);
     if(ret < 0) {
         char str_error[512] = {0};
@@ -180,8 +179,7 @@ void RtspPusher::Loop()
         LogError("Fail to av_write_trailer:%s", str_error);
         return;
     }
-
-    LogInfo("avformat_write_header ok");
+    LogInfo("av_write_trailer ok");
 }
 
 int RtspPusher::sendPacket(AVPacket *pkt, MediaType media_type)
@@ -204,7 +202,6 @@ int RtspPusher::sendPacket(AVPacket *pkt, MediaType media_type)
     pkt->duration = 0;
 
     RestTiemout();
-
     int ret = av_write_frame(fmt_ctx_, pkt);
     if(ret < 0) {
         msg_queue_->notify_msg2(MSG_RTSP_ERROR, ret);

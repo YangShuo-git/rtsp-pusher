@@ -3,7 +3,7 @@
 #include "push_work.h"
 #include "avpublish_time.h"
 
-PushWork::PushWork(MessageQueue *msg_queue)
+PushWork::PushWork(MessageQueue *msg_queue):msg_queue_(msg_queue)
 {
 
 }
@@ -158,10 +158,20 @@ RET_CODE PushWork::Init(const Properties &properties)
     rtsp_properties.SetProperty("rtsp_transport", rtsp_transport_);
     rtsp_properties.SetProperty("timeout", rtsp_timeout_);
     rtsp_properties.SetProperty("max_queue_duration", rtsp_max_queue_duration_);
+    rtsp_properties.SetProperty("max_queue_duration", rtsp_max_queue_duration_);
+    if (audio_encoder_) {
+        rtsp_properties.SetProperty("audio_frame_duration", 
+        audio_encoder_->GetFrameSamples()*1000/audio_encoder_->GetSampleRate());
+    }
+    if (video_encoder_) {
+        rtsp_properties.SetProperty("video_frame_duration", 1000/video_encoder_->GetFps());
+    }
+    
     if(rtsp_pusher_->Init(rtsp_properties) != RET_OK) {
         LogError("Fail to rtsp_pusher_->Init");
         return RET_FAIL;
     }
+
     // 创建视频流、音频流
     if(video_encoder_) {
         if(rtsp_pusher_->ConfigVideoStream(video_encoder_->GetCodecContext()) != RET_OK) {
@@ -187,8 +197,8 @@ RET_CODE PushWork::Init(const Properties &properties)
     Properties aud_cap_properties;
     aud_cap_properties.SetProperty("audio_test", 1);
     aud_cap_properties.SetProperty("input_pcm_name", input_pcm_name_);
-    aud_cap_properties.SetProperty("sample_rate", 48000);
-    aud_cap_properties.SetProperty("format", AV_SAMPLE_FMT_S16);
+    // aud_cap_properties.SetProperty("sample_rate", 48000);
+    // aud_cap_properties.SetProperty("format", AV_SAMPLE_FMT_S16);
     aud_cap_properties.SetProperty("channels", mic_channels_);
     aud_cap_properties.SetProperty("nb_samples", 1024);     // 由编码器提供
     aud_cap_properties.SetProperty("byte_per_sample", 2);    
@@ -318,13 +328,14 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
         }
     }
 
-    LogInfo("PcmCallback pts:%ld", pts);
+    // LogInfo("PcmCallback pts:%ld", pts);
     if(packet) {
         LogInfo("PcmCallback packet->pts:%ld", packet->pts);
         // av_packet_free(&packet);  要送去push，所以不能free了
         rtsp_pusher_->Push(packet, E_AUDIO_TYPE);
     }else
     {
+        av_packet_free(&packet);
         LogInfo("packet is null");
     }
 }
@@ -358,7 +369,7 @@ void PushWork::YuvCallback(uint8_t *yuv, int32_t size)
         fflush(h264_fp_);
     }
 
-    LogInfo("YuvCallback pts:%ld", pts);
+    // LogInfo("YuvCallback pts:%ld", pts);
     if(packet) 
     {
         LogInfo("YuvCallback packet->pts:%ld", packet->pts);
