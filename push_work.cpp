@@ -68,9 +68,9 @@ RET_CODE PushWork::Init(const Properties &properties)
     audio_ch_layout_ = av_get_default_channel_layout(audio_channels_);    // 由audio_channels_决定
 
     // 视频编码参数
-    video_width_  = properties.GetProperty("video_width", desktop_width_); 
-    video_height_ = properties.GetProperty("video_height", desktop_height_); 
-    video_fps_ = properties.GetProperty("video_fps", desktop_fps_);             
+    video_width_  = properties.GetProperty("video_width", 720); 
+    video_height_ = properties.GetProperty("video_height", 480); 
+    video_fps_ = properties.GetProperty("video_fps", 25);             
     video_gop_ = properties.GetProperty("video_gop", video_fps_);
     video_bitrate_ = properties.GetProperty("video_bitrate", 1024*1024);   // 先默认1M fixedme
     video_b_frames_ = properties.GetProperty("video_b_frames", 0); 
@@ -197,9 +197,9 @@ RET_CODE PushWork::Init(const Properties &properties)
     Properties aud_cap_properties;
     aud_cap_properties.SetProperty("audio_test", 1);
     aud_cap_properties.SetProperty("input_pcm_name", input_pcm_name_);
-    // aud_cap_properties.SetProperty("sample_rate", 48000);
-    // aud_cap_properties.SetProperty("format", AV_SAMPLE_FMT_S16);
-    aud_cap_properties.SetProperty("channels", mic_channels_);
+    aud_cap_properties.SetProperty("sample_rate", audio_sample_rate_);
+    aud_cap_properties.SetProperty("format", AV_SAMPLE_FMT_S16);
+    aud_cap_properties.SetProperty("channels", audio_channels_);
     aud_cap_properties.SetProperty("nb_samples", 1024);     // 由编码器提供
     aud_cap_properties.SetProperty("byte_per_sample", 2);    
     if(audio_capturer_->Init(aud_cap_properties) != RET_OK)
@@ -221,8 +221,8 @@ RET_CODE PushWork::Init(const Properties &properties)
     Properties vid_cap_properties;
     vid_cap_properties.SetProperty("video_test", 1);
     vid_cap_properties.SetProperty("input_yuv_name", input_yuv_name_);
-    vid_cap_properties.SetProperty("width", desktop_width_);
-    vid_cap_properties.SetProperty("height", desktop_height_);
+    vid_cap_properties.SetProperty("width", video_width_);
+    vid_cap_properties.SetProperty("height", video_height_);
     if(video_capturer_->Init(vid_cap_properties) != RET_OK)
     {
         LogError("Fail to Init VideoCapturer");

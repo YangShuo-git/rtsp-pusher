@@ -129,7 +129,7 @@ public:
 
         if(queue_.empty()) // 等待唤醒
         {        
-            // return如果返回false，继续wait, 如果返回true退出wait
+            // return 如果返回false，继续wait, 如果返回true退出wait
             cond_.wait(lock, [this] {
                 return !queue_.empty() | abort_request_;
             });
@@ -176,7 +176,7 @@ public:
             return -1;
         }
         if(queue_.empty()) {   // 等待唤醒  
-            // return如果返回false，继续wait, 如果返回true退出wait
+            // return 如果返回false，继续wait, 如果返回true退出wait
             cond_.wait_for(lock, std::chrono::milliseconds(timeout), [this] {
                 return !queue_.empty() | abort_request_;
             });

@@ -55,7 +55,7 @@ int H264Encoder::Init(const Properties &properties)
         return RET_FAIL;
     }
 
-    // 分配编码器上下文
+    // 分配编码器上下文(根据编码器)
     ctx_ = avcodec_alloc_context3(codec_);
     if(!ctx_) 
     {
@@ -94,7 +94,7 @@ int H264Encoder::Init(const Properties &properties)
         return RET_FAIL;
     }
 
-    // 从extradata读取sps pps
+    // 从编码码器上下文的extradata中读取sps pps
     if(ctx_->extradata) {
         LogInfo("extradata_size:%d", ctx_->extradata_size);
 

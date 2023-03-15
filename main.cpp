@@ -20,6 +20,9 @@ extern "C" {
 // ffmpeg -re -i  rtsp_test_hd.flv  -vcodec copy -acodec copy  -f flv -y rtsp://192.168.1.12/live/livestream
 // ffmpeg -re -i  1920x832_25fps.flv  -vcodec copy -acodec copy  -f flv -y rtsp://111.229.231.225/live/livestream
 
+// #define RTSP_TRANSPORT "udp"
+#define RTSP_TRANSPORT "tcp"
+
 
 int main()
 {
@@ -58,9 +61,6 @@ int main()
         properties.SetProperty("desktop_height", 480);  //测试模式时和yuv文件的高度一致
         //    properties.SetProperty("desktop_pixel_format", AV_PIX_FMT_YUV420P);
         properties.SetProperty("desktop_fps", 25);//测试模式时和yuv文件的帧率一致
-        // 视频编码属性
-        properties.SetProperty("video_bitrate", 512*1024);  // 设置码率
-
 #endif
 
         // 音频编码属性
@@ -73,7 +73,7 @@ int main()
 
         // 配置rtsp
         properties.SetProperty("rtsp_url", RTSP_URL);
-        properties.SetProperty("rtsp_transport", "udp");
+        properties.SetProperty("rtsp_transport", RTSP_TRANSPORT);
         properties.SetProperty("rtsp_timeout", 3000);  // 超时时间 3s
         properties.SetProperty("rtsp_max_queue_duration", 1000);
 
@@ -111,7 +111,7 @@ int main()
         msg_queue->msg_queue_abort();
     }
     delete msg_queue;
-    
+
     LogInfo("Main finish\n");
     return 0;
 }
