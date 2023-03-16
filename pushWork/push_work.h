@@ -2,12 +2,12 @@
 #define _PUSH_WORK_H_
 
 #include <string>
-#include "audio_capturer.h"
-#include "video_capturer.h"
-#include "aac_encoder.h"
-#include "h264_encoder.h"
-#include "rtsp_pusher.h"
-#include "msg_queue.h"
+#include "./capturer/audio_capturer.h"
+#include "./capturer/video_capturer.h"
+#include "./encoder/aac_encoder.h"
+#include "./encoder/h264_encoder.h"
+#include "./pusher/rtsp_pusher.h"
+#include "../tools/msg_queue.h"
 
 extern "C" {
 #include "libavcodec/avcodec.h"

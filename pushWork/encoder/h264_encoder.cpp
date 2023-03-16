@@ -1,5 +1,5 @@
 #include "h264_encoder.h"
-#include "log.h"
+#include "../../log/log.h"
 
 H264Encoder::H264Encoder()
 {

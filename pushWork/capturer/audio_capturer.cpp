@@ -1,6 +1,6 @@
 #include "audio_capturer.h"
-#include "log.h"
-#include "times_util.h"
+#include "../../log/log.h"
+#include "../../tools/times_util.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>

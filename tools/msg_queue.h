@@ -4,7 +4,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <list>
-#include "log.h"
+#include "../log/log.h"
 extern "C"
 {
 #include "libavcodec/avcodec.h"

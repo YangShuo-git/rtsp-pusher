@@ -1,10 +1,10 @@
 #ifndef _RTSP_PUSHER_H_
 #define _RTSP_PUSHER_H_
 
-#include "media_base.h"
-#include "common_looper.h"
+#include "../media_base.h"
+#include "../common_looper.h"
 #include "packet_queue.h"
-#include "msg_queue.h"
+#include "../../tools/msg_queue.h"
 
 extern "C" {
 #include "libavformat/avformat.h"

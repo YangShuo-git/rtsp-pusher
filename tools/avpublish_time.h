@@ -10,7 +10,7 @@
 #else
 #include <sys/time.h>
 #endif
-#include "log.h"
+#include "../log/log.h"
 
 class AVPublishTime
 {

@@ -2,8 +2,8 @@
 #define _VIDEO_CAPTURER_H_
 
 #include <functional>
-#include "common_looper.h"
-#include "media_base.h"
+#include "../common_looper.h"
+#include "../media_base.h"
 using std::function;
 
 class VideoCapturer: public CommonLooper

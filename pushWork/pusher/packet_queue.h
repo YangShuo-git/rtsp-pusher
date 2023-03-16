@@ -4,8 +4,8 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
-#include "media_base.h"
-#include "log.h"
+#include "../media_base.h"
+#include "../../log/log.h"
 extern "C"
 {
 #include "libavcodec/avcodec.h"

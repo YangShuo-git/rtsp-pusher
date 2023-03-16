@@ -1,7 +1,7 @@
 #include "video_capturer.h"
-#include "log.h"
-#include "times_util.h"
-#include "avpublish_time.h"
+#include "../../log/log.h"
+#include "../../tools/times_util.h"
+#include "../../tools/avpublish_time.h"
 
 VideoCapturer::VideoCapturer()
 {

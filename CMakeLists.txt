@@ -35,22 +35,25 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -Wall")
 set(ffmpeg_include_dir 3rdParty/ffmpeg-4.2.1/include)
 set(ffmpeg_lib_dir 3rdParty/ffmpeg-4.2.1/lib)
 
-# 增加子目录
-add_subdirectory(log)
-
 # 头文件查找目录
-# 这样在main函数中 就可以直接写#include <demo_thread.h>，而不用写上完整的路径
-include_directories(log)
+# 当前CMakeList.txt中的所有目标以及所有在其调用点之后添加的子目录中的所有目标将具有此头文件搜索路径
 include_directories(${ffmpeg_include_dir})
 
-# 链接库查找目录，否则下面就不能直接使用avformat(而是需要加入对应的路径)
-# 推荐使用这种方式来链接库：先引入库的目录，后面可以直接target库的名字
+# 链接库查找目录，否则下面就不能直接使用avformat(而是需要加入对应的路径) 推荐使用这种方式来链接库
+# 当前CMakeList.txt中的所有目标以及所有在其调用点之后添加的子目录中的所有目标将具有此库文件搜索路径
 link_directories(${ffmpeg_lib_dir})
+
+# 增加子目录
+add_subdirectory(log)
+add_subdirectory(tools)
+add_subdirectory(pushWork)
 
 #增加可执行程序
 aux_source_directory(. DIR_SRCS)
 add_executable(${PROJECT_NAME} ${DIR_SRCS})
 
 # 给可执行程序添加链接库
-target_link_libraries(${PROJECT_NAME} log)
-target_link_libraries(${PROJECT_NAME} pthread avfilter avformat avcodec avutil swresample swscale)
+target_link_libraries(${PROJECT_NAME} log pushWork)
+
+# 为什么这里不需要pthread 是因为使用的C++11的多线程吗？
+# target_link_libraries(${PROJECT_NAME} pthread)

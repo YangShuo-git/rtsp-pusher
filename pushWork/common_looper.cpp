@@ -1,5 +1,5 @@
 #include "common_looper.h"
-#include "log.h"
+#include "../log/log.h"
 
 void* CommonLooper::trampoline(void *p)
 {

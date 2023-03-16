@@ -1,5 +1,5 @@
 #include "aac_encoder.h"
-#include "log.h"
+#include "../../log/log.h"
 
 
 AACEncoder::AACEncoder()

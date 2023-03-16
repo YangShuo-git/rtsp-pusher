@@ -1,7 +1,7 @@
 #include <functional>
-#include "log.h"
+#include "../log/log.h"
 #include "push_work.h"
-#include "avpublish_time.h"
+#include "../tools/avpublish_time.h"
 
 PushWork::PushWork(MessageQueue *msg_queue):msg_queue_(msg_queue)
 {

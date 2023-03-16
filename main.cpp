@@ -1,7 +1,7 @@
 #include <iostream>
-#include "log.h"
-#include "push_work.h"
-#include "msg_queue.h"
+#include "./log/log.h"
+#include "./pushWork/push_work.h"
+#include "./tools/msg_queue.h"
 using namespace std;
 
 extern "C" {
@@ -20,8 +20,8 @@ extern "C" {
 // ffmpeg -re -i  rtsp_test_hd.flv  -vcodec copy -acodec copy  -f flv -y rtsp://192.168.1.12/live/livestream
 // ffmpeg -re -i  1920x832_25fps.flv  -vcodec copy -acodec copy  -f flv -y rtsp://111.229.231.225/live/livestream
 
-// #define RTSP_TRANSPORT "udp"
-#define RTSP_TRANSPORT "tcp"
+#define RTSP_TRANSPORT "udp"
+// #define RTSP_TRANSPORT "tcp"
 
 
 int main()
@@ -42,7 +42,7 @@ int main()
 
         // 音频test模式
         properties.SetProperty("audio_test", 1);
-        properties.SetProperty("input_pcm_name", "./res/48000_2_s16le.pcm");
+        properties.SetProperty("input_pcm_name", "./res/48k_2_s16le.pcm");
 
         // 视频test模式
         properties.SetProperty("video_test", 1);
@@ -87,7 +87,7 @@ int main()
         int ret = 0;
         int count = 0;
         AVMessage msg;
-        while (true)  // 这里阻塞的时间，就是采集的时间
+        while (true)  
         { 
             // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             ret = msg_queue->msg_queue_get(&msg, 1000);
@@ -103,10 +103,11 @@ int main()
                     break;
                 }
             }
-            if(count++ > 100){
-                LogInfo("Main break\n");
-                break;
-            }
+            // 这里阻塞的时间，就是采集的时间
+            // if(count++ > 100){
+            //     LogInfo("Main break\n");
+            //     break;
+            // }
         }
         msg_queue->msg_queue_abort();
     }

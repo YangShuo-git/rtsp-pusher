@@ -1,7 +1,7 @@
 #ifndef _H264_ENCODER_H_
 #define _H264_ENCODER_H_
 
-#include "media_base.h"
+#include "../media_base.h"
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavutil/opt.h>
