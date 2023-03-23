@@ -158,7 +158,6 @@ RET_CODE PushWork::Init(const Properties &properties)
     rtsp_properties.SetProperty("rtsp_transport", rtsp_transport_);
     rtsp_properties.SetProperty("timeout", rtsp_timeout_);
     rtsp_properties.SetProperty("max_queue_duration", rtsp_max_queue_duration_);
-    rtsp_properties.SetProperty("max_queue_duration", rtsp_max_queue_duration_);
     if (audio_encoder_) {
         rtsp_properties.SetProperty("audio_frame_duration", 
         audio_encoder_->GetFrameSamples()*1000/audio_encoder_->GetSampleRate());
@@ -185,6 +184,7 @@ RET_CODE PushWork::Init(const Properties &properties)
             return RET_FAIL;
         }
     }
+    
     // 网络连接
     if(rtsp_pusher_->Connect() != RET_OK) {
         LogError("Fail to rtsp_pusher Connect()");

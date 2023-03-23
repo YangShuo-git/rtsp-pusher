@@ -113,7 +113,7 @@ RET_CODE RtspPusher::Connect()
     LogInfo("connect to:%s", url_.c_str());
 
     RestTiemout();
-    // 连接服务器
+    // 写视频文件头
     int ret = avformat_write_header(fmt_ctx_, nullptr);
     if(ret < 0) {
         char str_error[512] = {0};
@@ -172,6 +172,7 @@ void RtspPusher::Loop()
     }
     
     RestTiemout();
+    // 写视频文件尾
     ret = av_write_trailer(fmt_ctx_);
     if(ret < 0) {
         char str_error[512] = {0};
@@ -198,10 +199,12 @@ int RtspPusher::sendPacket(AVPacket *pkt, MediaType media_type)
         return -1;
     }
 
+    // 将时间戳从一个时基转换到另外一个时基  H264/90000,代表时钟频率必须是90000
     pkt->pts = av_rescale_q(pkt->pts, src_time_base, dst_time_base);
     pkt->duration = 0;
 
     RestTiemout();
+    // 将编码后的视频数据写入文件（或者网络流）  用于输出的AVFormatContext、等待输出的AVPacket
     int ret = av_write_frame(fmt_ctx_, pkt);
     if(ret < 0) {
         msg_queue_->notify_msg2(MSG_RTSP_ERROR, ret);
