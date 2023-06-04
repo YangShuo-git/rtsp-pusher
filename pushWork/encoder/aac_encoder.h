@@ -72,6 +72,7 @@ private:
     int channels_    = 2;
     int bitrate_     = 128*1024;
     int channel_layout_ = AV_CH_LAYOUT_STEREO;
+    std::string codec_name_;
 
     AVCodec *codec_        = nullptr;  // 编码器
     AVCodecContext  *codecCtx_  = nullptr;  // 编码器上下文

@@ -84,6 +84,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     // 初始化publish time
     AVPublishTime::GetInstance()->Rest();  // 推流打时间戳的问题
 
+
     // 设置音频编码器（通过上面获取到的参数来进行设置）
     audio_encoder_ = new AACEncoder();
     if(!audio_encoder_){
@@ -145,7 +146,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     }
 
 
-    // 设置 Rtsp Pusher（即网络连接） 在音视频编码器初始化后，音视频捕获前
+    // 设置 Rtsp Pusher（初始化、创建新流、网络连接） 在音视频编码器初始化后，音视频捕获前
     rtsp_pusher_ = new RtspPusher(msg_queue_);
     if(!rtsp_pusher_) {
         LogError("Fail to new RTSPPusher()");
@@ -163,7 +164,6 @@ RET_CODE PushWork::Init(const Properties &properties)
     if (video_encoder_) {
         rtsp_properties.SetProperty("video_frame_duration", 1000/video_encoder_->GetFps());
     }
-    
     if(rtsp_pusher_->Init(rtsp_properties) != RET_OK) {
         LogError("Fail to rtsp_pusher_->Init");
         return RET_FAIL;
@@ -182,7 +182,7 @@ RET_CODE PushWork::Init(const Properties &properties)
             return RET_FAIL;
         }
     }
-    
+
     // 网络连接
     if(rtsp_pusher_->Connect() != RET_OK) {
         LogError("Fail to rtsp_pusher Connect()");

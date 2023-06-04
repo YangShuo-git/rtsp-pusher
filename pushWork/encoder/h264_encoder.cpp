@@ -52,7 +52,7 @@ int H264Encoder::Init(const Properties &properties)
     if(!codec_) 
     {
         LogError("Can't find video encoder");
-        return RET_FAIL;
+        return RET_ERR_MISMATCH_CODE;
     }
 
     // 分配编码器上下文(根据编码器)
@@ -60,7 +60,7 @@ int H264Encoder::Init(const Properties &properties)
     if(!codecCtx_) 
     {
         LogError("Fail to avcodec_alloc_context3: video");
-        return RET_FAIL;
+        return RET_ERR_OUTOFMEMORY;
     }
 
     // 给编码器配置参数（使用的是之前设置的参数）

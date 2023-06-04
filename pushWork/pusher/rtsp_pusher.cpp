@@ -216,14 +216,14 @@ int RtspPusher::sendPacket(AVPacket *pkt, MediaType media_type)
     return 0;
 }
 
-RET_CODE RtspPusher::ConfigVideoStream(const AVCodecContext *ctx)
+RET_CODE RtspPusher::ConfigVideoStream(const AVCodecContext *codecCtx)
 {
     if(!ofmt_ctx_) {
         LogError("fmt_ctx is nullptr");
         return RET_FAIL;
     }
-    if(!ctx) {
-        LogError("ctx is nullptr");
+    if(!codecCtx) {
+        LogError("codecCtx is nullptr");
         return RET_FAIL;
     }
 
@@ -236,21 +236,21 @@ RET_CODE RtspPusher::ConfigVideoStream(const AVCodecContext *ctx)
     vs->codecpar->codec_tag = 0;
 
     // 从编码器拷贝信息
-    avcodec_parameters_from_context(vs->codecpar, ctx);
-    video_ctx_ = (AVCodecContext *) ctx;
+    avcodec_parameters_from_context(vs->codecpar, codecCtx);
+    video_ctx_ = (AVCodecContext *)codecCtx;
     video_stream_ = vs;
-    video_index_ = vs->index;   // 这个索引非常重要 fmt_ctx_根据index判别 音视频包
+    video_index_ = vs->index;   // avformat_new_stream会生成index ofmt_ctx_根据index判别 音视频包
     return RET_OK;
 }
 
-RET_CODE RtspPusher::ConfigAudioStream(const AVCodecContext *ctx)
+RET_CODE RtspPusher::ConfigAudioStream(const AVCodecContext *codecCtx)
 {
     if(!ofmt_ctx_) {
         LogError("fmt_ctx is nullptr");
         return RET_FAIL;
     }
-    if(!ctx) {
-        LogError("ctx is nullptr");
+    if(!codecCtx) {
+        LogError("codecCtx is nullptr");
         return RET_FAIL;
     }
 
@@ -263,8 +263,8 @@ RET_CODE RtspPusher::ConfigAudioStream(const AVCodecContext *ctx)
     as->codecpar->codec_tag = 0;
 
     // 从编码器拷贝信息
-    avcodec_parameters_from_context(as->codecpar, ctx);
-    audio_ctx_ = (AVCodecContext *) ctx;
+    avcodec_parameters_from_context(as->codecpar, codecCtx);
+    audio_ctx_ = (AVCodecContext *)codecCtx;
     audio_stream_ = as;
     audio_index_ = as->index;
     return RET_OK;

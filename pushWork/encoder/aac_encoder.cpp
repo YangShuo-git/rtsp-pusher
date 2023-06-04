@@ -22,9 +22,17 @@ RET_CODE AACEncoder::Init(const Properties &properties)
     bitrate_  = properties.GetProperty("bitrate", 128*1024);
     channel_layout_ = properties.GetProperty("channel_layout",
                                              (int)av_get_default_channel_layout(channels_));
-
+    codec_name_ = properties.GetProperty("codec_name", "default");
+    
     // 查找编码器
-    codec_ = avcodec_find_encoder(AV_CODEC_ID_AAC);
+    if(codec_name_ == "default") 
+    {
+        LogInfo("use default audio encoder: AAC");
+        codec_ = avcodec_find_encoder(AV_CODEC_ID_AAC);
+    } else {
+        LogInfo("use %s encoder", codec_name_.c_str());
+        codec_ = avcodec_find_encoder_by_name(codec_name_.c_str());
+    }                                         
     if(!codec_) 
     {
         LogError("Fail to find audio encoder");
