@@ -27,10 +27,6 @@ public:
         return s_publish_time;
     }
 
-    AVPublishTime() {
-        start_time_ = getCurrentTimeMsec();
-    }
-
     void Rest() {
         start_time_ = getCurrentTimeMsec();
     }
@@ -97,7 +93,6 @@ public:
         int64_t t = getCurrentTimeMsec() - start_time_;
 
         return (uint32_t)(t%0xffffffff);
-
     }
     // 各个关键点的时间戳
     inline const char *getKeyTimeTag() {
@@ -148,6 +143,10 @@ public:
         return "keytime:vin";
     }
 private:
+    AVPublishTime() {
+        start_time_ = getCurrentTimeMsec();
+    }
+    
     int64_t getCurrentTimeMsec() {
 #ifdef _WIN32
         struct timeval tv;

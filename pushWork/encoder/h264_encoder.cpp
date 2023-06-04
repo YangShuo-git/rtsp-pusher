@@ -8,8 +8,8 @@ H264Encoder::H264Encoder()
 
 H264Encoder::~H264Encoder()
 {
-    if(ctx_) {
-        avcodec_free_context(&ctx_);
+    if(codecCtx_) {
+        avcodec_free_context(&codecCtx_);
     }
     if(frame_) {
         av_frame_free(&frame_);
@@ -43,7 +43,7 @@ int H264Encoder::Init(const Properties &properties)
     // 查找编码器
     if(codec_name_ == "default") 
     {
-        LogInfo("use default video encoder");
+        LogInfo("use default video encoder: H264");
         codec_ = avcodec_find_encoder(AV_CODEC_ID_H264);
     } else {
         LogInfo("use %s encoder", codec_name_.c_str());
@@ -56,37 +56,37 @@ int H264Encoder::Init(const Properties &properties)
     }
 
     // 分配编码器上下文(根据编码器)
-    ctx_ = avcodec_alloc_context3(codec_);
-    if(!ctx_) 
+    codecCtx_ = avcodec_alloc_context3(codec_);
+    if(!codecCtx_) 
     {
         LogError("Fail to avcodec_alloc_context3: video");
         return RET_FAIL;
     }
 
     // 给编码器配置参数（使用的是之前设置的参数）
-    ctx_->width  = width_;
-    ctx_->height = height_;
-    ctx_->bit_rate = bitrate_;
-    ctx_->gop_size = gop_;
-    ctx_->pix_fmt  = (AVPixelFormat)pix_fmt_;
-    ctx_->max_b_frames = b_frames_;
-    ctx_->codec_type = AVMEDIA_TYPE_VIDEO;
+    codecCtx_->width  = width_;
+    codecCtx_->height = height_;
+    codecCtx_->bit_rate = bitrate_;
+    codecCtx_->gop_size = gop_;
+    codecCtx_->pix_fmt  = (AVPixelFormat)pix_fmt_;
+    codecCtx_->max_b_frames = b_frames_;
+    codecCtx_->codec_type = AVMEDIA_TYPE_VIDEO;
 
     // 帧率
-    ctx_->framerate.num = fps_;  // 分子
-    ctx_->framerate.den = 1;     // 分母
+    codecCtx_->framerate.num = fps_;  // 分子
+    codecCtx_->framerate.den = 1;     // 分母
     // time_base
-    ctx_->time_base.num = 1;     // 分子
-    ctx_->time_base.den = fps_;  // 分母
+    codecCtx_->time_base.num = 1;     // 分子
+    codecCtx_->time_base.den = fps_;  // 分母
 
     av_dict_set(&dict_, "preset", "medium", 0);
     av_dict_set(&dict_, "tune", "zerolatency", 0);
     av_dict_set(&dict_, "profile", "high", 0);
 
-    ctx_->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+    codecCtx_->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
     // 打开编码器
-    ret = avcodec_open2(ctx_, codec_, &dict_);
+    ret = avcodec_open2(codecCtx_, codec_, &dict_);
     if(ret < 0) {
         char buf[1024] = { 0 };
         av_strerror(ret, buf, sizeof(buf) - 1);
@@ -95,17 +95,17 @@ int H264Encoder::Init(const Properties &properties)
     }
 
     // 从编码码器上下文的extradata中读取sps pps
-    if(ctx_->extradata) {
-        LogInfo("extradata_size:%d", ctx_->extradata_size);
+    if(codecCtx_->extradata) {
+        LogInfo("extradata_size:%d", codecCtx_->extradata_size);
 
         // 第一个为sps 7  第二个为pps 8
-        uint8_t *sps = ctx_->extradata + 4;  // 跳过起始码
+        uint8_t *sps = codecCtx_->extradata + 4;  // 跳过起始码
         int sps_len = 0;
         uint8_t *pps = nullptr;
         int pps_len = 0;
-        uint8_t *data = ctx_->extradata + 4;
+        uint8_t *data = codecCtx_->extradata + 4;
 
-        for (int i = 0; i < ctx_->extradata_size - 4; ++i)
+        for (int i = 0; i < codecCtx_->extradata_size - 4; ++i)
         {
             if (0 == data[i] && 0 == data[i + 1] && 0 == data[i + 2] && 1 == data[i + 3])
             {
@@ -114,7 +114,7 @@ int H264Encoder::Init(const Properties &properties)
             }
         }
         sps_len = int(pps - sps) - 4;
-        pps_len = ctx_->extradata_size - 4*2 - sps_len;
+        pps_len = codecCtx_->extradata_size - 4*2 - sps_len;
         sps_.append(sps, sps + sps_len);
         pps_.append(pps, pps + pps_len);
     }
@@ -122,7 +122,7 @@ int H264Encoder::Init(const Properties &properties)
     frame_ = av_frame_alloc();
     frame_->width = width_;
     frame_->height = height_;
-    frame_->format = ctx_->pix_fmt;
+    frame_->format = codecCtx_->pix_fmt;
     ret = av_frame_get_buffer(frame_, 0);
     return RET_OK;
 }
@@ -146,10 +146,10 @@ AVPacket *H264Encoder::Encode(uint8_t *yuv, int size, int64_t pts, int *pkt_fram
         }
         frame_->pts = pts;
         frame_->pict_type = AV_PICTURE_TYPE_NONE;
-        ret1 = avcodec_send_frame(ctx_, frame_);
+        ret1 = avcodec_send_frame(codecCtx_, frame_);
     } else 
     {
-        ret1 = avcodec_send_frame(ctx_, nullptr);
+        ret1 = avcodec_send_frame(codecCtx_, nullptr);
     }
     if(ret1 < 0)  // <0 不能正常处理该frame
     {  
@@ -173,7 +173,7 @@ AVPacket *H264Encoder::Encode(uint8_t *yuv, int size, int64_t pts, int *pkt_fram
     }
 
     AVPacket *packet = av_packet_alloc();
-    ret1 = avcodec_receive_packet(ctx_, packet);
+    ret1 = avcodec_receive_packet(codecCtx_, packet);
     if(ret1 < 0) 
     {
         LogError("H264: avcodec_receive_packet ret:%d", ret1);

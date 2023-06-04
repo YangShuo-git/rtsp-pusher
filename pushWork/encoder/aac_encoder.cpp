@@ -8,9 +8,9 @@ AACEncoder::AACEncoder()
 
 AACEncoder::~AACEncoder()
 {
-    if(ctx_) 
+    if(codecCtx_) 
     {
-        avcodec_free_context(&ctx_);
+        avcodec_free_context(&codecCtx_);
     }
 }
 
@@ -31,27 +31,27 @@ RET_CODE AACEncoder::Init(const Properties &properties)
         return RET_ERR_MISMATCH_CODE;
     }
     // 分配编码器上下文
-    ctx_ = avcodec_alloc_context3(codec_);
-    if(!ctx_) 
+    codecCtx_ = avcodec_alloc_context3(codec_);
+    if(!codecCtx_) 
     {
         LogError("Fail to avcodec_alloc_context3: audio");
         return RET_ERR_OUTOFMEMORY;
     }
 
     // 给编码器配置参数（使用的是之前设置的参数）
-    ctx_->sample_rate   = sample_rate_;
-    ctx_->sample_fmt    = AV_SAMPLE_FMT_FLTP;  // 这里默认是aac编码：planar格式PCM， 如果是fdk-aac，会不一样
-    ctx_->channels      = channels_;
-    ctx_->channel_layout= channel_layout_;
-    ctx_->bit_rate      = bitrate_;
+    codecCtx_->sample_rate   = sample_rate_;
+    codecCtx_->sample_fmt    = AV_SAMPLE_FMT_FLTP;  // 这里默认是aac编码：planar格式PCM， 如果是fdk-aac，会不一样
+    codecCtx_->channels      = channels_;
+    codecCtx_->channel_layout= channel_layout_;
+    codecCtx_->bit_rate      = bitrate_;
     // Allow experimental codecs
-    ctx_->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
+    codecCtx_->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
     // 打开编码器
-    if(avcodec_open2(ctx_, codec_, nullptr) < 0) 
+    if(avcodec_open2(codecCtx_, codec_, nullptr) < 0) 
     {
         LogError("Fail to avcodec_open2: audio");
-        avcodec_free_context(&ctx_);
+        avcodec_free_context(&codecCtx_);
         return RET_FAIL;
     }
 
@@ -62,7 +62,7 @@ AVPacket *AACEncoder::Encode(AVFrame *frame, const int64_t pts, int flush, int *
 {
     int ret1 = 0;
     *pkt_frame = 0;
-    if(!ctx_) 
+    if(!codecCtx_) 
     {
         *ret = RET_FAIL;
         LogError("AAC: no context");
@@ -71,7 +71,7 @@ AVPacket *AACEncoder::Encode(AVFrame *frame, const int64_t pts, int flush, int *
     if(frame) 
     {
         frame->pts = pts;
-        ret1 = avcodec_send_frame(ctx_, frame);
+        ret1 = avcodec_send_frame(codecCtx_, frame);
         //        av_frame_unref(frame);
         if(ret1 < 0)  // 小于0 不能正常处理该frame
         {  
@@ -96,11 +96,11 @@ AVPacket *AACEncoder::Encode(AVFrame *frame, const int64_t pts, int flush, int *
     }
     if(flush)  // 只能调用一次 
     {     
-        avcodec_flush_buffers(ctx_);
+        avcodec_flush_buffers(codecCtx_);
     }
 
     AVPacket *packet = av_packet_alloc();
-    ret1 = avcodec_receive_packet(ctx_, packet);
+    ret1 = avcodec_receive_packet(codecCtx_, packet);
     if(ret1 < 0) 
     {
         LogError("AAC: avcodec_receive_packet ret:%d", ret1);
@@ -128,7 +128,7 @@ AVPacket *AACEncoder::Encode(AVFrame *frame, const int64_t pts, int flush, int *
 RET_CODE AACEncoder::GetAdtsHeader(uint8_t *adts_header, int aac_length)
 {
     uint8_t freqIdx = 0;    //0: 96000 Hz  3: 48000 Hz 4: 44100 Hz
-    switch (ctx_->sample_rate)
+    switch (codecCtx_->sample_rate)
     {
     case 96000: freqIdx = 0; break;
     case 88200: freqIdx = 1; break;
@@ -148,11 +148,11 @@ RET_CODE AACEncoder::GetAdtsHeader(uint8_t *adts_header, int aac_length)
         freqIdx = 4;
         return RET_FAIL;
     }
-    uint8_t ch_cfg = ctx_->channels;
+    uint8_t ch_cfg = codecCtx_->channels;
     uint32_t frame_length = aac_length + 7;
     adts_header[0] = 0xFF;
     adts_header[1] = 0xF1;
-    adts_header[2] = ((ctx_->profile) << 6) + (freqIdx << 2) + (ch_cfg >> 2);
+    adts_header[2] = ((codecCtx_->profile) << 6) + (freqIdx << 2) + (ch_cfg >> 2);
     adts_header[3] = (((ch_cfg & 3) << 6) + (frame_length  >> 11));
     adts_header[4] = ((frame_length & 0x7FF) >> 3);
     adts_header[5] = (((frame_length & 7) << 5) + 0x1F);

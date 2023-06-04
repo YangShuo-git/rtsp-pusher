@@ -46,9 +46,6 @@ private:
 
     int sendPacket(AVPacket *pkt, MediaType media_type);
 
-    // 整个输出流的上下文
-    AVFormatContext *fmt_ctx_ = nullptr;
-
     // 视频编码器上下文
     AVCodecContext *video_ctx_ = nullptr;
     AVStream *video_stream_ = nullptr;
@@ -59,6 +56,8 @@ private:
     AVStream *audio_stream_ = nullptr;
     int audio_index_ = -1;
 
+    // 输出流的上下文
+    AVFormatContext *ofmt_ctx_ = nullptr;
     std::string url_ = "";
     std::string rtsp_transport_ = "";
 

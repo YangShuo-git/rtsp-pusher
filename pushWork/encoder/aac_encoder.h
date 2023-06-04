@@ -34,33 +34,33 @@ public:
 
     virtual int GetSampleRate() 
     {
-        return ctx_->sample_rate;
+        return codecCtx_->sample_rate;
     }
     virtual int GetFormat() 
     {
-        return ctx_->sample_fmt;
+        return codecCtx_->sample_fmt;
     }
     virtual int GetChannels() 
     {
-        return ctx_->channels;
+        return codecCtx_->channels;
     }
     virtual int GetChannelLayout() 
     {
-        return ctx_->channel_layout;
+        return codecCtx_->channel_layout;
     }
     // 一帧有多少个采样点 (采样点数量，只是说的一个通道)
     virtual int GetFrameSamples() 
     {      
-        return ctx_->frame_size;
+        return codecCtx_->frame_size;
     }
     // 一帧占用的字节数
     virtual int GetFrameBytes() 
     {
-        return av_get_bytes_per_sample(ctx_->sample_fmt) * ctx_->channels * ctx_->frame_size;
+        return av_get_bytes_per_sample(codecCtx_->sample_fmt) * codecCtx_->channels * codecCtx_->frame_size;
     }
     AVCodecContext *GetCodecContext() 
     {
-        return ctx_;
+        return codecCtx_;
     }
 
 //    virtual RET_CODE EncodeInput(const AVFrame *frame);
@@ -74,7 +74,7 @@ private:
     int channel_layout_ = AV_CH_LAYOUT_STEREO;
 
     AVCodec *codec_        = nullptr;  // 编码器
-    AVCodecContext  *ctx_  = nullptr;  // 编码器上下文
+    AVCodecContext  *codecCtx_  = nullptr;  // 编码器上下文
 };
 
 

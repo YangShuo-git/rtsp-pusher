@@ -52,13 +52,13 @@ RET_CODE RtspPusher::Init(const Properties &properties)
         return RET_FAIL;
     }
     // 分配输出流的上下文 AVFormatContext
-    ret = avformat_alloc_output_context2(&fmt_ctx_, nullptr, "rtsp", url_.c_str());
+    ret = avformat_alloc_output_context2(&ofmt_ctx_, nullptr, "rtsp", url_.c_str());
     if(ret < 0) {
         av_strerror(ret, str_error, sizeof(str_error) -1);
         LogError("Fail to avformat_alloc_output_context2:%s", str_error);
         return RET_FAIL;
     }
-    ret = av_opt_set(fmt_ctx_->priv_data, "rtsp_transport", rtsp_transport_.c_str(), 0);
+    ret = av_opt_set(ofmt_ctx_->priv_data, "rtsp_transport", rtsp_transport_.c_str(), 0);
     if(ret < 0) {
         av_strerror(ret, str_error, sizeof(str_error) -1);
         LogError("Fail to av_opt_set:%s", str_error);
@@ -66,8 +66,8 @@ RET_CODE RtspPusher::Init(const Properties &properties)
     }
 
     // 设置rtsp连接超时回调（利用ffmpeg的参数）
-    fmt_ctx_->interrupt_callback.callback = decode_interrupt_cb;    
-    fmt_ctx_->interrupt_callback.opaque = this;
+    ofmt_ctx_->interrupt_callback.callback = decode_interrupt_cb;    
+    ofmt_ctx_->interrupt_callback.opaque = this;
 
     // 创建packet队列
     queue_ = new PacketQueue(audio_frame_duration_, video_frame_duration_);
@@ -85,9 +85,9 @@ void RtspPusher::DeInit()  // 这个函数重复调用没有问题
         queue_->Abort();
     }
     Stop();
-    if(fmt_ctx_) {
-        avformat_free_context(fmt_ctx_);
-        fmt_ctx_ = nullptr;
+    if(ofmt_ctx_) {
+        avformat_free_context(ofmt_ctx_);
+        ofmt_ctx_ = nullptr;
     }
     if(queue_) {
         delete queue_;
@@ -114,7 +114,7 @@ RET_CODE RtspPusher::Connect()
 
     RestTiemout();
     // 写视频文件头
-    int ret = avformat_write_header(fmt_ctx_, nullptr);
+    int ret = avformat_write_header(ofmt_ctx_, nullptr);
     if(ret < 0) {
         char str_error[512] = {0};
         av_strerror(ret, str_error, sizeof(str_error) -1);
@@ -173,7 +173,7 @@ void RtspPusher::Loop()
     
     RestTiemout();
     // 写视频文件尾
-    ret = av_write_trailer(fmt_ctx_);
+    ret = av_write_trailer(ofmt_ctx_);
     if(ret < 0) {
         char str_error[512] = {0};
         av_strerror(ret, str_error, sizeof(str_error) -1);
@@ -205,7 +205,7 @@ int RtspPusher::sendPacket(AVPacket *pkt, MediaType media_type)
 
     RestTiemout();
     // 将编码后的视频数据写入文件（或者网络流）  用于输出的AVFormatContext、等待输出的AVPacket
-    int ret = av_write_frame(fmt_ctx_, pkt);
+    int ret = av_write_frame(ofmt_ctx_, pkt);
     if(ret < 0) {
         msg_queue_->notify_msg2(MSG_RTSP_ERROR, ret);
         char str_error[512] = {0};
@@ -218,7 +218,7 @@ int RtspPusher::sendPacket(AVPacket *pkt, MediaType media_type)
 
 RET_CODE RtspPusher::ConfigVideoStream(const AVCodecContext *ctx)
 {
-    if(!fmt_ctx_) {
+    if(!ofmt_ctx_) {
         LogError("fmt_ctx is nullptr");
         return RET_FAIL;
     }
@@ -228,7 +228,7 @@ RET_CODE RtspPusher::ConfigVideoStream(const AVCodecContext *ctx)
     }
 
     // 添加视频流
-    AVStream *vs = avformat_new_stream(fmt_ctx_, nullptr);
+    AVStream *vs = avformat_new_stream(ofmt_ctx_, nullptr);
     if(!vs) {
         LogError("Fail to avformat_new_stream: video");
         return RET_FAIL;
@@ -245,7 +245,7 @@ RET_CODE RtspPusher::ConfigVideoStream(const AVCodecContext *ctx)
 
 RET_CODE RtspPusher::ConfigAudioStream(const AVCodecContext *ctx)
 {
-    if(!fmt_ctx_) {
+    if(!ofmt_ctx_) {
         LogError("fmt_ctx is nullptr");
         return RET_FAIL;
     }
@@ -255,7 +255,7 @@ RET_CODE RtspPusher::ConfigAudioStream(const AVCodecContext *ctx)
     }
 
     // 添加音频流
-    AVStream *as = avformat_new_stream(fmt_ctx_, nullptr);
+    AVStream *as = avformat_new_stream(ofmt_ctx_, nullptr);
     if(!as) {
         LogError("Fail to avformat_new_stream: audio");
         return RET_FAIL;

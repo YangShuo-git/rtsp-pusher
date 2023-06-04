@@ -41,7 +41,7 @@ public:
     }
     AVCodecContext *GetCodecContext() 
     {
-        return ctx_;
+        return codecCtx_;
     }
 
 private:
@@ -61,7 +61,7 @@ private:
     std::string pps_;
     std::string codec_name_;
     AVCodec *codec_ = nullptr;
-    AVCodecContext  *ctx_ = nullptr;
+    AVCodecContext  *codecCtx_ = nullptr;
     AVDictionary *dict_ = nullptr;  // 有些参数需要字典去传递
 
     AVFrame *frame_ = nullptr;

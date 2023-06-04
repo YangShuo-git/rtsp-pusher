@@ -84,7 +84,6 @@ RET_CODE PushWork::Init(const Properties &properties)
     // 初始化publish time
     AVPublishTime::GetInstance()->Rest();  // 推流打时间戳的问题
 
-
     // 设置音频编码器（通过上面获取到的参数来进行设置）
     audio_encoder_ = new AACEncoder();
     if(!audio_encoder_){
@@ -152,7 +151,6 @@ RET_CODE PushWork::Init(const Properties &properties)
         LogError("Fail to new RTSPPusher()");
         return RET_FAIL;
     }
-
     Properties rtsp_properties;
     rtsp_properties.SetProperty("url", rtsp_url_);
     rtsp_properties.SetProperty("rtsp_transport", rtsp_transport_);
