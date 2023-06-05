@@ -49,11 +49,11 @@ RET_CODE AudioCapturer::Init(const Properties properties)
     return RET_OK;
 }
 
-void AudioCapturer::Loop()
+void AudioCapturer::loop()
 {
     LogInfo("into loop: AudioCapturer");
     pcm_total_duration_ = 0;
-    pcm_start_time_ = TimesUtil::GetTimeMillisecond();  // 初始化时间基
+    pcm_start_time_ = TimesUtil::getTimeMillisecond();  // 初始化时间基
     while(true) {
         if(request_abort_) 
         {
@@ -94,7 +94,7 @@ int AudioCapturer::openPcmFile(const char *file_name)
 
 int AudioCapturer::readPcmFile(uint8_t *pcm_buf, int32_t pcm_buf_size)
 {
-    int64_t cur_time = TimesUtil::GetTimeMillisecond();     // 单位毫秒
+    int64_t cur_time = TimesUtil::getTimeMillisecond();     // 单位毫秒
     int64_t dif = cur_time - pcm_start_time_;       // 目前经过的时间
     if(((int64_t)pcm_total_duration_) > dif) 
     {

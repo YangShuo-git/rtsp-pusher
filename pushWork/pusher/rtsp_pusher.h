@@ -18,7 +18,7 @@ class RtspPusher: public CommonLooper
 public:
     RtspPusher(MessageQueue *msg_queue);
     virtual ~RtspPusher();
-    virtual void Loop();
+    virtual void loop();
 
     RET_CODE Init(const Properties& properties);
     void DeInit();
@@ -32,7 +32,7 @@ public:
     RET_CODE ConfigAudioStream(const AVCodecContext *ctx);
 
     bool IsTimeout();
-    void RestTiemout();
+    void ResetTimeout();
     int GetTimeout();
     int64_t GetBlockTime();
 

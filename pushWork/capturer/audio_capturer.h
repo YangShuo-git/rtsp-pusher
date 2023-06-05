@@ -12,14 +12,14 @@ class AudioCapturer : public CommonLooper
 public:
     AudioCapturer();
     virtual ~AudioCapturer();
-    virtual void Loop();
+    virtual void loop();
 
     RET_CODE Init(const Properties properties);
     void AddCallback(function<void(uint8_t*, int32_t)> callback);
 
 private:
     // PCM file只是用来测试, 写死为采样率48Khz 2通道 s16格式
-    // 1帧1024采样点持续的时间21.333333333333333333333333333333ms
+    // 1帧1024采样点持续的时间21.33ms
     int openPcmFile(const char *file_name);
     int readPcmFile(uint8_t *pcm_buf, int32_t pcm_buf_size);
     int closePcmFile();

@@ -215,7 +215,7 @@ static inline int64_t getTimeMillisecond()
         return ((int64_t)tv.tv_sec * 1000 + (unsigned long long)tv.tv_usec / 1000);
     #endif
 
-//        return duration_cast<chrono::milliseconds>(high_resolution_clock::now() - m_begin).count();
+    //  return duration_cast<chrono::milliseconds>(high_resolution_clock::now() - m_begin).count();
 
 }
 void write_log(slog_level level, int print_stacktrace, const char *func_name, int line, const char *fmt, ...)

@@ -84,7 +84,7 @@ void RtspPusher::DeInit()  // 这个函数重复调用没有问题
     if(queue_) {
         queue_->Abort();
     }
-    Stop();
+    stopThread();
     if(ofmt_ctx_) {
         avformat_free_context(ofmt_ctx_);
         ofmt_ctx_ = nullptr;
@@ -112,7 +112,7 @@ RET_CODE RtspPusher::Connect()
     }
     LogInfo("connect to:%s", url_.c_str());
 
-    RestTiemout();
+    ResetTimeout();
     // 写视频文件头
     int ret = avformat_write_header(ofmt_ctx_, nullptr);
     if(ret < 0) {
@@ -124,12 +124,12 @@ RET_CODE RtspPusher::Connect()
     LogInfo("avformat_write_header ok");
 
     // 启动推流线程
-    return Start();     
+    return startThread();     
 }
 
-void RtspPusher::Loop()
+void RtspPusher::loop()
 {
-    LogInfo("Loop into: rtsp pusher");
+    LogInfo("loop into: rtsp pusher");
     int ret = 0;
     AVPacket *pkt = nullptr;
     MediaType media_type;
@@ -171,7 +171,7 @@ void RtspPusher::Loop()
         }
     }
     
-    RestTiemout();
+    ResetTimeout();
     // 写视频文件尾
     ret = av_write_trailer(ofmt_ctx_);
     if(ret < 0) {
@@ -203,7 +203,7 @@ int RtspPusher::sendPacket(AVPacket *pkt, MediaType media_type)
     pkt->pts = av_rescale_q(pkt->pts, src_time_base, dst_time_base);
     pkt->duration = 0;
 
-    RestTiemout();
+    ResetTimeout();
     // 将编码后的视频数据写入文件（或者网络流）  用于输出的AVFormatContext、等待输出的AVPacket
     int ret = av_write_frame(ofmt_ctx_, pkt);
     if(ret < 0) {
@@ -272,15 +272,15 @@ RET_CODE RtspPusher::ConfigAudioStream(const AVCodecContext *codecCtx)
 
 bool RtspPusher::IsTimeout()
 {
-    if(TimesUtil::GetTimeMillisecond() - pre_time_ > timeout_) {
+    if(TimesUtil::getTimeMillisecond() - pre_time_ > timeout_) {
         return true;    // 超时
     }
     return false;
 }
 
-void RtspPusher::RestTiemout()
+void RtspPusher::ResetTimeout()
 {
-    pre_time_ = TimesUtil::GetTimeMillisecond();        // 重置为当前时间
+    pre_time_ = TimesUtil::getTimeMillisecond();        // 重置为当前时间
 }
 
 int RtspPusher::GetTimeout()
@@ -290,12 +290,12 @@ int RtspPusher::GetTimeout()
 
 int64_t RtspPusher::GetBlockTime()
 {
-    return TimesUtil::GetTimeMillisecond() - pre_time_;
+    return TimesUtil::getTimeMillisecond() - pre_time_;
 }
 
 void RtspPusher::debugQueue(int64_t interval)
 {
-    int64_t cur_time = TimesUtil::GetTimeMillisecond();
+    int64_t cur_time = TimesUtil::getTimeMillisecond();
     if(cur_time - pre_debug_time_ > interval) {
         // 打印信息
         PacketQueueStats stats;

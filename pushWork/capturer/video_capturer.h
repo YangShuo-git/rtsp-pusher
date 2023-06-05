@@ -11,7 +11,7 @@ class VideoCapturer: public CommonLooper
 public:
     VideoCapturer();
     ~VideoCapturer();
-    virtual void Loop();
+    virtual void loop();
 
     RET_CODE Init(const Properties& properties);
     void AddCallback(function<void(uint8_t*, int32_t)> callback);

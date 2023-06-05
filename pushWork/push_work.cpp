@@ -183,7 +183,7 @@ RET_CODE PushWork::Init(const Properties &properties)
         }
     }
 
-    // 网络连接
+    // 网络连接  会启动推流线程
     if(rtsp_pusher_->Connect() != RET_OK) {
         LogError("Fail to rtsp_pusher Connect()");
         return RET_FAIL;
@@ -205,12 +205,14 @@ RET_CODE PushWork::Init(const Properties &properties)
         LogError("Fail to Init AudioCapturer");
         return RET_FAIL;
     }
+    // PcmCallback是PushWork中的函数，bind成回调函数，并注册到audio_capturer_中
     audio_capturer_->AddCallback(std::bind(&PushWork::PcmCallback, this, 
                                            std::placeholders::_1,
                                            std::placeholders::_2));
-    if(audio_capturer_->Start()!= RET_OK) 
+    // 启动音频采集线程
+    if(audio_capturer_->startThread()!= RET_OK)
     {
-         LogError("Fail to Start AudioCapturer");
+         LogError("Fail to startThread AudioCapturer");
         return RET_FAIL;
     }
 
@@ -230,9 +232,9 @@ RET_CODE PushWork::Init(const Properties &properties)
     video_capturer_->AddCallback(std::bind(&PushWork::YuvCallback, this,
                                           std::placeholders::_1,
                                           std::placeholders::_2));
-    if(video_capturer_->Start()!= RET_OK) 
+    if(video_capturer_->startThread()!= RET_OK) 
     {
-        LogError("Fail to Start VideoCapturer");
+        LogError("Fail to startThread VideoCapturer");
         return RET_FAIL;
     }
 
@@ -242,13 +244,13 @@ RET_CODE PushWork::Init(const Properties &properties)
 RET_CODE PushWork::DeInit()
 {
     if(audio_capturer_) {
-        audio_capturer_->Stop();
+        audio_capturer_->stopThread();
         delete audio_capturer_;
         audio_capturer_ = nullptr;
     }
 
     if(video_capturer_){
-        video_capturer_->Stop();
+        video_capturer_->stopThread();
         delete video_capturer_;
         video_capturer_ = nullptr;
     }

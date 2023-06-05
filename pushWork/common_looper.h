@@ -10,11 +10,11 @@ public:
     CommonLooper();
     virtual ~CommonLooper();
 
-    virtual RET_CODE Start();  // 开启线程
-    virtual void Stop();       // 停止线程
-    virtual bool Running();
-    virtual void SetRunning(bool running);
-    virtual void Loop() = 0;
+    virtual RET_CODE startThread();  // 开启线程
+    virtual void stopThread();       // 停止线程
+    virtual bool isRunning();
+    virtual void setRunning(bool running);
+    virtual void loop() = 0;
 
 private:
     static void* trampoline(void *p);

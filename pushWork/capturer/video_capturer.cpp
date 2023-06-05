@@ -40,7 +40,7 @@ RET_CODE VideoCapturer::Init(const Properties &properties)
     return RET_OK;
 }
 
-void VideoCapturer::Loop()
+void VideoCapturer::loop()
 {
     LogInfo("into loop: VideoCapturer");
 
@@ -48,7 +48,7 @@ void VideoCapturer::Loop()
     yuv_buf_ = new uint8_t[yuv_buf_size];  // 给一帧yuv分配内存
 
     yuv_total_duration_ = 0;
-    yuv_start_time_ = TimesUtil::GetTimeMillisecond();
+    yuv_start_time_ = TimesUtil::getTimeMillisecond();
 
     while (true) {
         if(request_abort_) {
@@ -91,7 +91,7 @@ int VideoCapturer::openYuvFile(const char *file_name)
 
 int VideoCapturer::readYuvFile(uint8_t *yuv_buf, int32_t yuv_buf_size)
 {
-    int64_t cur_time = TimesUtil::GetTimeMillisecond();
+    int64_t cur_time = TimesUtil::getTimeMillisecond();
     int64_t dif = cur_time - yuv_start_time_;
     //    LogDebug("%lld, %lld\n", yuv_total_duration_, dif);
     if((int64_t)yuv_total_duration_ > dif)

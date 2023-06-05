@@ -3,11 +3,11 @@
 
 void* CommonLooper::trampoline(void *p)
 {
-    LogInfo("into");
-    ((CommonLooper*)p)->SetRunning(true);
-    ((CommonLooper*)p)->Loop();
-     ((CommonLooper*)p)->SetRunning(false);
-    LogInfo("leave");
+    LogInfo("into trampoline");
+    ((CommonLooper*)p)->setRunning(true);
+    ((CommonLooper*)p)->loop();
+     ((CommonLooper*)p)->setRunning(false);
+    LogInfo("leave trampoline");
     return nullptr;
 }
 
@@ -19,22 +19,22 @@ CommonLooper::CommonLooper():request_abort_(false), running_(false)
 
 CommonLooper::~CommonLooper()
 {
-    Stop();
+    stopThread();
 }
 
-RET_CODE CommonLooper::Start()
+RET_CODE CommonLooper::startThread()
 {
-    LogInfo("into");
+    LogInfo("into startThread");
     worker_ = new std::thread(trampoline, this);
     if (!worker_)
     {
-        LogError("Fail to new std::thread");
+        LogError("Fail to new thread");
         return RET_FAIL;
     }
     return RET_OK;
 }
 
-void CommonLooper::Stop()
+void CommonLooper::stopThread()
 {
     request_abort_ = true;
     if (worker_)
@@ -45,12 +45,12 @@ void CommonLooper::Stop()
     }
 }
 
-bool CommonLooper::Running()
+bool CommonLooper::isRunning()
 {
     return running_;
 }
 
-void CommonLooper::SetRunning(bool running)
+void CommonLooper::setRunning(bool running)
 {
     running_ = running;
 }

@@ -49,21 +49,24 @@ using namespace std::chrono;
 class TimesUtil
 {
 public:
-    static inline int64_t GetTimeMillisecond()
+    // 获取当前时间的毫秒级时间戳
+    static inline int64_t getTimeMillisecond()
     {
         #ifdef _WIN32
             return (int64_t)GetTickCount();
         #else
             struct timeval tv;
             gettimeofday(&tv, NULL);
-            return ((int64_t)tv.tv_sec * 1000 + (unsigned long long)tv.tv_usec / 1000);
+            // 因为 gettimeofday 函数返回的时间值是以秒和微秒为单位的，需要将其转换为毫秒级时间戳
+            return ((int64_t)tv.tv_sec * 1000 + (unsigned long long)tv.tv_usec / 1000); // 将秒数和毫秒数相加，得到最终的毫秒级时间戳
         #endif
 
-//        return duration_cast<chrono::milliseconds>(high_resolution_clock::now() - m_begin).count();
+        // 现代的用法
+        // return duration_cast<chrono::milliseconds>(high_resolution_clock::now() - m_begin).count();
 
     }
 //private:
-//    static time_point<high_resolution_clock> m_begin;
+    // static time_point<high_resolution_clock> m_begin;
 };
 
 #endif // TIMEUTIL_H
