@@ -26,7 +26,7 @@ extern "C" {
 
 int main()
 {
-    init_logger("rtsp_push.log", S_INFO);
+    init_logger("rtsp_push", S_INFO);
     MessageQueue *msg_queue = new MessageQueue();
 
     // for (int i = 0; i < 3; i++)

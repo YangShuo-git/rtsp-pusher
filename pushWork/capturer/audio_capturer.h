@@ -14,7 +14,15 @@ public:
     virtual ~AudioCapturer();
     virtual void loop();
 
+    /**
+     * 
+     * "sample_rate"     采样率，默认48000
+     * "channels"        通道数量 ，默认2
+     * "channel_layout"  通道布局，默认根据channels获取默认的
+     */
     RET_CODE Init(const Properties properties);
+
+    // 通过回调函数，将采集到的数据发送出去
     void AddCallback(function<void(uint8_t*, int32_t)> callback);
 
 private:

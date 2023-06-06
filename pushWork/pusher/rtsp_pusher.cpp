@@ -51,7 +51,7 @@ RET_CODE RtspPusher::Init(const Properties &properties)
         LogError("Fail to avformat_network_init:%s", str_error);
         return RET_FAIL;
     }
-    // 分配输出流的上下文 AVFormatContext
+    // 分配输出流的上下文 AVFormatContext 即ofmt_ctx_
     ret = avformat_alloc_output_context2(&ofmt_ctx_, nullptr, "rtsp", url_.c_str());
     if(ret < 0) {
         av_strerror(ret, str_error, sizeof(str_error) -1);

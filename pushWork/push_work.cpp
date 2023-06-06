@@ -164,6 +164,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     if (video_encoder_) {
         rtsp_properties.SetProperty("video_frame_duration", 1000/video_encoder_->GetFps());
     }
+    // 初始化
     if(rtsp_pusher_->Init(rtsp_properties) != RET_OK) {
         LogError("Fail to rtsp_pusher_->Init");
         return RET_FAIL;
