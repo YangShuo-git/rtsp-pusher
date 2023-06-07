@@ -53,7 +53,7 @@ aux_source_directory(. DIR_SRCS)
 add_executable(${PROJECT_NAME} ${DIR_SRCS})
 
 # 给可执行程序添加链接库
-target_link_libraries(${PROJECT_NAME} log pushWork)
+target_link_libraries(${PROJECT_NAME} log pushWork tools)
 
-# 为什么这里不需要pthread 是因为使用的C++11的多线程吗？
+# 这里不需要pthread的原因
 # target_link_libraries(${PROJECT_NAME} pthread)
