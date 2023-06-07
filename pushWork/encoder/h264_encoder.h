@@ -14,6 +14,15 @@ public:
     H264Encoder();
     virtual ~H264Encoder();
     
+    /**
+     * width    宽
+     * height   高
+     * fps      帧率
+     * b_frames b帧连续数量
+     * bitrate  比特率
+     * gop      多少帧有一个I帧
+     * pix_fmt  像素格式
+     */
     virtual int Init(const Properties &properties);
     // pkt_frame 用来定位报错的位置  
     // 若*pkt_frame = 1, 表示send_frame报错；若*pkt_frame = 0，表示receive_packet报错;

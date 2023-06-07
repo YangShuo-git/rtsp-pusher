@@ -13,6 +13,14 @@ public:
     ~VideoCapturer();
     virtual void loop();
 
+    /**
+     * "x", x起始位置，默认为0
+     * "y", y起始位置，默认为0
+     * "width", 宽度，默认为屏幕宽带
+     * "height", 高度，默认为屏幕高度
+     * "format", 像素格式，AVPixelFormat对应的值，默认为AV_PIX_FMT_YUV420P
+     * "fps", 帧数，默认为25
+     */
     RET_CODE Init(const Properties& properties);
     void AddCallback(function<void(uint8_t*, int32_t)> callback);
 

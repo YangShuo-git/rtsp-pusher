@@ -26,7 +26,7 @@ public:
      * pts       时间戳
      * flush     是否flush
      * pkt_frame 若*pkt_frame = 1, 表示send_frame报错；若*pkt_frame = 0，表示receive_packet报错;
-     * ret   只有RET_OK才不需要做异常处理
+     * ret       只有RET_OK才不需要做异常处理
      */
     virtual AVPacket *Encode(AVFrame *frame, const int64_t pts, int flush, int *pkt_frame, RET_CODE *ret);
 

@@ -130,9 +130,9 @@ RET_CODE PushWork::Init(const Properties &properties)
     }
 
     audio_frame_ = av_frame_alloc();
-    audio_frame_->format = audio_encoder_->GetFormat();
-    audio_frame_->channels = audio_encoder_->GetChannels();
     audio_frame_->nb_samples = audio_encoder_->GetFrameSamples();
+    audio_frame_->format     = audio_encoder_->GetFormat();
+    audio_frame_->channels   = audio_encoder_->GetChannels();
     audio_frame_->channel_layout = audio_encoder_->GetChannelLayout();
     if(fltp_buf_size_ != frame_bytes) {
         LogError("fltp_buf_size_:%d != frame_bytes:%d", fltp_buf_size_, frame_bytes);
@@ -229,7 +229,7 @@ RET_CODE PushWork::Init(const Properties &properties)
         LogError("Fail to Init VideoCapturer");
         return RET_FAIL;
     }
-//    video_nalu_buf = new uint8_t[VIDEO_NALU_BUF_MAX_SIZE];
+    // video_nalu_buf = new uint8_t[VIDEO_NALU_BUF_MAX_SIZE];
     video_capturer_->AddCallback(std::bind(&PushWork::YuvCallback, this,
                                           std::placeholders::_1,
                                           std::placeholders::_2));
@@ -270,9 +270,13 @@ void s16le_convert_to_fltp(short *s16le, float *fltp, int nb_samples) {
 void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
 {
     int ret = 0;
+    int pkt_frame = 0;
+    RET_CODE encode_ret = RET_OK;
+
+    // 将采集到的pcm包输出到一个新的pcm文件 push_dump_s16le.pcm
     if(!pcm_s16le_fp_)
     {
-        pcm_s16le_fp_ = fopen("build/push_dump_s16le.pcm", "wb");
+        pcm_s16le_fp_ = fopen("build/dump_s16le.pcm", "wb");
     }
     if(pcm_s16le_fp_)
     {
@@ -281,14 +285,18 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
         fflush(pcm_s16le_fp_);
     }
 
-    // 这里就约定好，音频捕获的时候，一帧的采样点和编码器需要的点数是一样的
+
+    // 将frame编码为packet前的准备工作
+    // 将采样数据从16位有符号整数格式（s16le）转换为浮点数格式（fltp）
+    // 这里就约定好一帧的采样点，音频捕获需要的和编码器需要的点数是一样的
     s16le_convert_to_fltp((short *)pcm, (float *)fltp_buf_, audio_frame_->nb_samples);
+    // 确保audio_frame_的缓冲区可写，并且可以对其进行修改或填充
     ret = av_frame_make_writable(audio_frame_);
     if(ret < 0) {
         LogError("Fail to av_frame_make_writable");
         return;
     }
-    // 将fltp_buf_写入frame
+    // 将源缓冲区 fltp_buf_ 中的音频数据填充到目标数据数组audio_frame_->data中
     ret = av_samples_fill_arrays(audio_frame_->data,
                                  audio_frame_->linesize,
                                  fltp_buf_,
@@ -301,19 +309,19 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
         return;
     }
 
-    // 打上时间戳
-    int64_t pts = (int64_t)AVPublishTime::GetInstance()->get_audio_pts();
-    int pkt_frame = 0;
-    RET_CODE encode_ret = RET_OK;
+    // 编码操作
+    int64_t pts = (int64_t)AVPublishTime::GetInstance()->get_audio_pts();  // 打上时间戳
     AVPacket *packet = audio_encoder_->Encode(audio_frame_, pts, 0, &pkt_frame, &encode_ret);
+
+    // 将编码后的packet输出为aac文件 push_dump.aac  为了保证播放，需要加上7Byte adts header
     if(encode_ret == RET_OK && packet) 
     {
         if(!aac_fp_) 
         {
-            aac_fp_ = fopen("build/push_dump.aac", "wb");
+            aac_fp_ = fopen("build/dump.aac", "wb");
             if(!aac_fp_) 
             {
-                LogError("Fail to fopen push_dump.aac");
+                LogError("Fail to fopen dump.aac");
                 return;
             }
         }
@@ -329,13 +337,13 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
         }
     }
 
+    // 将编码后的packet push到推流队列
     // LogInfo("PcmCallback pts:%ld", pts);
     if(packet) {
-        LogInfo("PcmCallback packet->pts:%ld", packet->pts);
-        // av_packet_free(&packet);  要送去push，所以不能free了
+        // LogInfo("PcmCallback packet->pts:%ld", packet->pts);
+        // av_packet_free(&packet);  要push到推流队列中，所以不能free了
         rtsp_pusher_->Push(packet, E_AUDIO_TYPE);
-    }else
-    {
+    }else {
         av_packet_free(&packet);
         LogInfo("packet is null");
     }
@@ -351,10 +359,10 @@ void PushWork::YuvCallback(uint8_t *yuv, int32_t size)
     {
         if(!h264_fp_) 
         {
-            h264_fp_ = fopen("build/push_dump.h264", "wb");
+            h264_fp_ = fopen("build/dump.h264", "wb");
             if(!h264_fp_) 
             {
-                LogError("Fail to fopen push_dump.h264");
+                LogError("Fail to fopen dump.h264");
                 return;
             }
             // 写入sps 和pps
@@ -373,7 +381,7 @@ void PushWork::YuvCallback(uint8_t *yuv, int32_t size)
     // LogInfo("YuvCallback pts:%ld", pts);
     if(packet) 
     {
-        LogInfo("YuvCallback packet->pts:%ld", packet->pts);
+        // LogInfo("YuvCallback packet->pts:%ld", packet->pts);
         // av_packet_free(&packet);
         rtsp_pusher_->Push(packet, E_VIDEO_TYPE);
     }else {

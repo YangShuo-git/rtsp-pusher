@@ -28,9 +28,7 @@ private:
     void YuvCallback(uint8_t* yuv, int32_t size);
 
 private:
-    AudioCapturer *audio_capturer_ = nullptr;
-    VideoCapturer *video_capturer_ = nullptr;
-
+    // encoder
     AACEncoder *audio_encoder_;
     AVFrame *audio_frame_ = nullptr;
     FILE *pcm_s16le_fp_ = nullptr;
@@ -40,6 +38,20 @@ private:
 
     H264Encoder *video_encoder_ = nullptr;
     FILE *h264_fp_ = nullptr;
+
+    // rtsp pusher
+    RtspPusher *rtsp_pusher_ = nullptr;
+    std::string rtsp_url_;
+    std::string rtsp_transport_ = "";
+    int rtsp_timeout_ = 5000;   // 连接rtsp的超时时间，默认5s
+    int rtsp_max_queue_duration_ = 500;
+
+    // capturer
+    AudioCapturer *audio_capturer_ = nullptr;
+    VideoCapturer *video_capturer_ = nullptr;
+
+    // 消息处理
+    MessageQueue *msg_queue_ = nullptr;
 
 
     // 文件模式
@@ -75,15 +87,6 @@ private:
     int video_gop_;
     int video_bitrate_;
     int video_b_frames_;   // b帧数量
-
-    // rtsp 
-    RtspPusher *rtsp_pusher_ = nullptr;
-    std::string rtsp_url_;
-    std::string rtsp_transport_ = "";
-    int rtsp_timeout_ = 5000;   // 连接rtsp的超时时间，默认5s
-    int rtsp_max_queue_duration_ = 500;
-
-    MessageQueue *msg_queue_ = nullptr;
 };
 
 #endif // _PUSH_WORK_H_
