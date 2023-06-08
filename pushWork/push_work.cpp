@@ -270,8 +270,6 @@ void s16le_convert_to_fltp(short *s16le, float *fltp, int nb_samples) {
 void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
 {
     int ret = 0;
-    int pkt_frame = 0;
-    RET_CODE encode_ret = RET_OK;
 
     // 将采集到的pcm包输出到一个新的pcm文件 push_dump_s16le.pcm
     if(!pcm_s16le_fp_)
@@ -310,10 +308,12 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
     }
 
     // 编码操作
+    int pkt_frame = 0;
+    RET_CODE encode_ret = RET_OK;
     int64_t pts = (int64_t)AVPublishTime::GetInstance()->get_audio_pts();  // 打上时间戳
     AVPacket *packet = audio_encoder_->Encode(audio_frame_, pts, 0, &pkt_frame, &encode_ret);
 
-    // 将编码后的packet输出为aac文件 push_dump.aac  为了保证播放，需要加上7Byte adts header
+    // 将编码后的packet输出为aac文件 dump.aac  为了保证播放，需要加上7Byte adts header
     if(encode_ret == RET_OK && packet) 
     {
         if(!aac_fp_) 
@@ -351,10 +351,13 @@ void PushWork::PcmCallback(uint8_t *pcm, int32_t size)
 
 void PushWork::YuvCallback(uint8_t *yuv, int32_t size)
 {
-    int64_t pts = (int64_t)AVPublishTime::GetInstance()->get_video_pts();
+    // 编码操作
     int pkt_frame = 0;
     RET_CODE encode_ret = RET_OK;
+    int64_t pts = (int64_t)AVPublishTime::GetInstance()->get_video_pts();
     AVPacket *packet = video_encoder_->Encode(yuv, size, pts, &pkt_frame, &encode_ret);
+
+    // 将编码后的packet输出为h264文件 dump.h264  为了保证播放，需要加上4Byte start code
     if(packet) 
     {
         if(!h264_fp_) 
@@ -374,7 +377,6 @@ void PushWork::YuvCallback(uint8_t *yuv, int32_t size)
         }
 
         fwrite(packet->data, 1, packet->size, h264_fp_);
-
         fflush(h264_fp_);
     }
 

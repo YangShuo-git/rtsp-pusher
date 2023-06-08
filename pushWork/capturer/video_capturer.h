@@ -47,7 +47,7 @@ private:
     int yuv_buf_size = 0;
 
 
-    function<void(uint8_t*, int32_t)> callback_get_yuv_ = nullptr;
+    function<void(uint8_t*, int32_t)> callback_handle_yuv_ = nullptr;
     bool is_first_frame_ = false;
 };
 

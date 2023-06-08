@@ -62,9 +62,9 @@ void VideoCapturer::loop()
                 LogInfo("%s:t%u", AVPublishTime::GetInstance()->getVInTag(),
                         AVPublishTime::GetInstance()->getCurrenTime());
             }
-            if(callback_get_yuv_)
+            if(callback_handle_yuv_)
             {
-                callback_get_yuv_(yuv_buf_, yuv_buf_size);
+                callback_handle_yuv_(yuv_buf_, yuv_buf_size);
             }
         }
 
@@ -76,7 +76,7 @@ void VideoCapturer::loop()
 
 void VideoCapturer::AddCallback(function<void (uint8_t *, int32_t)> callback)
 {
-    callback_get_yuv_ = callback;
+    callback_handle_yuv_ = callback;
 }
 
 int VideoCapturer::openYuvFile(const char *file_name)

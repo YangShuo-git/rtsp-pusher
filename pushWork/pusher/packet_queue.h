@@ -129,7 +129,7 @@ public:
 
         if(queue_.empty()) // 等待唤醒
         {        
-            // return 如果返回false，继续wait, 如果返回true退出wait
+            // return 如果返回false，继续阻塞在这里；如果返回true，则继续执行
             cond_.wait(lock, [this] {
                 return !queue_.empty() | abort_request_;
             });

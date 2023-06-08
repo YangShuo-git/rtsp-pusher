@@ -48,7 +48,7 @@ private:
     int nb_samples_ = 1024;  // 一个音频帧的采样点
     int byte_per_sample_ = 2;  // 一个采样点的大小，单位字节
 
-    std::function<void(uint8_t *, int32_t)> callback_get_pcm_;
+    std::function<void(uint8_t *, int32_t)> callback_handle_pcm_;
 };
 
 #endif // _AUDIO_CAPTURER_H_

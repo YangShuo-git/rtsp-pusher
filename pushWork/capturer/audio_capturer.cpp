@@ -66,9 +66,9 @@ void AudioCapturer::loop()
                 is_first_time_ = true;
                 LogInfo("First time to read pcm file");
             }
-            if(callback_get_pcm_) 
+            if(callback_handle_pcm_) 
             {
-                callback_get_pcm_(pcm_buf_, pcm_buf_size_);
+                callback_handle_pcm_(pcm_buf_, pcm_buf_size_);
             }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -79,7 +79,7 @@ void AudioCapturer::loop()
 
 void AudioCapturer::AddCallback(function<void (uint8_t *, int32_t)> callback)
 {
-    callback_get_pcm_ = callback;
+    callback_handle_pcm_ = callback;
 }
 
 int AudioCapturer::openPcmFile(const char *file_name)
