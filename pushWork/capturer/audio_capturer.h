@@ -35,18 +35,21 @@ private:
     int audio_test_ = 0;
     std::string input_pcm_name_;    // 输入pcm测试文件的名字
     FILE *pcm_fp_ = nullptr;
+
     int64_t pcm_start_time_ = 0;
     double pcm_total_duration_ = 0; // 推流时长的统计
-    double frame_duration_ = 23.2;  // 默认帧长23.2ms
+    double frame_duration_ = 21.3;  // 默认帧长21.3ms 根据采样率和音频帧大小计算的
 
-    uint8_t *pcm_buf_;
-    int32_t pcm_buf_size_;
+    uint8_t *pcm_buf_;     // 每次都是从pcm文件中读取一个音频帧  
+    int32_t pcm_buf_size_; // 从pcm文件中读取的一个音频帧的大小
+
+    int sample_rate_ = 48000; // 采样率
+    int format_ = 1;          // 采样格式 目前固定s16
+    int channels_ = 2;        // 声道数
+    int nb_samples_ = 1024;   // 一个音频帧的采样点
+    int byte_per_sample_ = 2; // 一个采样点的大小，单位字节
+
     bool is_first_time_ = false;
-    int sample_rate_ = 48000;
-    int format_ = 1;        // 目前固定s16先
-    int channels_ = 2;
-    int nb_samples_ = 1024;  // 一个音频帧的采样点
-    int byte_per_sample_ = 2;  // 一个采样点的大小，单位字节
 
     std::function<void(uint8_t *, int32_t)> callback_handle_pcm_;
 };

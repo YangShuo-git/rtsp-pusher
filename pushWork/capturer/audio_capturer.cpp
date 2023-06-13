@@ -33,7 +33,7 @@ RET_CODE AudioCapturer::Init(const Properties properties)
 
     frame_duration_ = 1.0 * nb_samples_ / sample_rate_ * 1000;      // 计算一个音频帧的时间，单位ms
     pcm_buf_size_   = byte_per_sample_ * channels_ *  nb_samples_;  // 采集一个音频帧的大小，单位字节（也就是读取一次数据的大小）
-    pcm_buf_ = new uint8_t[pcm_buf_size_];  // 分配一个音频帧大小的内存
+    pcm_buf_ = new uint8_t[pcm_buf_size_];                          // 分配一个音频帧大小的内存
     if(!pcm_buf_)
     {
         return RET_ERR_OUTOFMEMORY;
@@ -53,7 +53,7 @@ void AudioCapturer::loop()
 {
     LogInfo("into loop: AudioCapturer");
     pcm_total_duration_ = 0;
-    pcm_start_time_ = TimesUtil::getTimeMillisecond();  // 初始化时间基
+    pcm_start_time_ = TimesUtil::getTimeMillisecond();  // 初始化时间
     while(true) {
         if(request_abort_) 
         {
@@ -94,6 +94,7 @@ int AudioCapturer::openPcmFile(const char *file_name)
 
 int AudioCapturer::readPcmFile(uint8_t *pcm_buf, int32_t pcm_buf_size)
 {
+    // 需要按照一个音频帧的时长读取音频数据，确保每次读取的数据都对应一个完整的音频帧
     int64_t cur_time = TimesUtil::getTimeMillisecond();     // 单位毫秒
     int64_t dif = cur_time - pcm_start_time_;       // 目前经过的时间
     if(((int64_t)pcm_total_duration_) > dif) 

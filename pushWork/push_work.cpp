@@ -82,7 +82,7 @@ RET_CODE PushWork::Init(const Properties &properties)
     rtsp_max_queue_duration_ = properties.GetProperty("rtsp_max_queue_duration", 500);
 
     // 初始化publish time
-    AVPublishTime::GetInstance()->Rest();  // 推流打时间戳的问题
+    AVPublishTime::GetInstance()->reset();  // 推流打时间戳的问题
 
 
     // 设置音频编码器（通过上面获取到的参数来进行设置）

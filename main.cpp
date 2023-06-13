@@ -15,7 +15,7 @@ extern "C" {
 // 减少码流分析时间 ffplay.exe -i rtmp://xxxxxxx -analyzeduration 1000000 单位为微秒
 // ffplay -i rtsp://192.168.2.132/live/livestream -fflags nobuffer -analyzeduration 1000000 -rtsp_transport udp
 
-#define RTSP_URL "rtsp://192.168.149.42/live/livestream"  // ubuntu IP 桥接模式
+#define RTSP_URL "rtsp://192.168.31.42/live/livestream"  // ubuntu IP 桥接模式
 // ffmpeg -re -i  rtsp_test_hd.flv  -vcodec copy -acodec copy  -f flv -y rtsp://111.229.231.225/live/livestream
 // ffmpeg -re -i  rtsp_test_hd.flv  -vcodec copy -acodec copy  -f flv -y rtsp://192.168.1.12/live/livestream
 // ffmpeg -re -i  1920x832_25fps.flv  -vcodec copy -acodec copy  -f flv -y rtsp://111.229.231.225/live/livestream

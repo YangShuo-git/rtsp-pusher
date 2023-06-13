@@ -27,7 +27,7 @@ public:
         return s_publish_time;
     }
 
-    void Rest() {
+    void reset() {
         start_time_ = getCurrentTimeMsec();
     }
 
@@ -202,7 +202,7 @@ public:
         start_time_ = getCurrentTimeMsec();
     }
 
-    void Rest() {
+    void reset() {
         start_time_ = getCurrentTimeMsec();
     }
     // 各个关键点的时间戳
